@@ -4,6 +4,8 @@ let workspace = null;
 let sidebar = null;
 let currencyDisplay = null;
 let discardZone = null;
+let discoveryCount = null;
+let menuOverlay = null;
 let draggedItem = null;
 let dragOffset = { x: 0, y: 0 };
 
@@ -11,10 +13,12 @@ export function initUI() {
   createLayout();
   renderSidebar();
   updateCurrencyDisplay();
+  updateDiscoveryCount();
 
   // Set up game callbacks
   game.onCurrencyChange = updateCurrencyDisplay;
   game.onWorkspaceChange = renderWorkspace;
+  game.onDiscovery = onNewDiscovery;
 }
 
 function createLayout() {
@@ -23,7 +27,12 @@ function createLayout() {
     <div class="game-container">
       <header class="header">
         <h1>Project Infinity</h1>
-        <div class="currency">💰 <span id="currency">4</span></div>
+        <div class="header-right">
+          <button class="menu-btn" id="menu-btn">
+            📖 <span id="discovery-count">4</span>/${game.getTotalElements()}
+          </button>
+          <div class="currency">💰 <span id="currency">4</span></div>
+        </div>
       </header>
       <div class="main">
         <aside class="sidebar" id="sidebar"></aside>
@@ -35,12 +44,32 @@ function createLayout() {
         </div>
       </div>
     </div>
+    <div class="menu-overlay hidden" id="menu-overlay">
+      <div class="menu-panel">
+        <div class="menu-header">
+          <h2>Discoveries</h2>
+          <button class="close-btn" id="close-menu">&times;</button>
+        </div>
+        <div class="menu-content" id="menu-content"></div>
+        <div class="menu-footer">
+          <button class="reset-btn" id="reset-btn">Reset Progress</button>
+        </div>
+      </div>
+    </div>
+    <div class="discovery-popup hidden" id="discovery-popup">
+      <div class="discovery-content">
+        <div class="discovery-label">New Discovery!</div>
+        <div class="discovery-element" id="discovery-element"></div>
+      </div>
+    </div>
   `;
 
   workspace = document.getElementById('workspace');
   sidebar = document.getElementById('sidebar');
   currencyDisplay = document.getElementById('currency');
   discardZone = document.getElementById('discard');
+  discoveryCount = document.getElementById('discovery-count');
+  menuOverlay = document.getElementById('menu-overlay');
 
   // Workspace events
   workspace.addEventListener('dragover', onWorkspaceDragOver);
@@ -55,6 +84,20 @@ function createLayout() {
     discardZone.classList.remove('drag-over');
   });
   discardZone.addEventListener('drop', onDiscardDrop);
+
+  // Menu events
+  document.getElementById('menu-btn').addEventListener('click', openMenu);
+  document.getElementById('close-menu').addEventListener('click', closeMenu);
+  menuOverlay.addEventListener('click', (e) => {
+    if (e.target === menuOverlay) closeMenu();
+  });
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    if (confirm('Reset all progress? This cannot be undone.')) {
+      game.reset();
+      updateDiscoveryCount();
+      closeMenu();
+    }
+  });
 }
 
 function renderSidebar() {
@@ -109,6 +152,79 @@ function updateCurrencyDisplay() {
   renderSidebar();
 }
 
+function updateDiscoveryCount() {
+  discoveryCount.textContent = game.getDiscoveryCount();
+}
+
+function onNewDiscovery(elementId) {
+  updateDiscoveryCount();
+  showDiscoveryPopup(elementId);
+}
+
+function showDiscoveryPopup(elementId) {
+  const element = game.getElement(elementId);
+  const popup = document.getElementById('discovery-popup');
+  const content = document.getElementById('discovery-element');
+
+  content.innerHTML = `
+    <span class="emoji">${element.emoji}</span>
+    <span class="name">${element.name}</span>
+  `;
+
+  popup.classList.remove('hidden');
+  setTimeout(() => popup.classList.add('hidden'), 2000);
+}
+
+function openMenu() {
+  renderMenuContent();
+  menuOverlay.classList.remove('hidden');
+}
+
+function closeMenu() {
+  menuOverlay.classList.add('hidden');
+}
+
+function renderMenuContent() {
+  const content = document.getElementById('menu-content');
+  const discoveries = game.getDiscoveries();
+
+  // Sort by cost (tier), then alphabetically
+  discoveries.sort((a, b) => {
+    if (a.cost !== b.cost) return a.cost - b.cost;
+    return a.name.localeCompare(b.name);
+  });
+
+  content.innerHTML = discoveries.map(el => {
+    const ingredients = game.getIngredients(el.id);
+    let recipeHtml = '';
+
+    if (ingredients) {
+      const ing1 = game.getElement(ingredients[0]);
+      const ing2 = game.getElement(ingredients[1]);
+      recipeHtml = `
+        <div class="recipe">
+          <span class="recipe-item">${ing1.emoji} ${ing1.name}</span>
+          <span class="recipe-plus">+</span>
+          <span class="recipe-item">${ing2.emoji} ${ing2.name}</span>
+        </div>
+      `;
+    } else {
+      recipeHtml = '<div class="recipe base">Base Element</div>';
+    }
+
+    return `
+      <div class="discovery-entry">
+        <div class="discovery-header">
+          <span class="emoji">${el.emoji}</span>
+          <span class="name">${el.name}</span>
+          <span class="cost-badge">${el.cost}</span>
+        </div>
+        ${recipeHtml}
+      </div>
+    `;
+  }).join('');
+}
+
 // Sidebar drag start - spawning new element
 function onSidebarDragStart(e) {
   const elementId = e.target.dataset.element;
@@ -137,7 +253,6 @@ function onSidebarClick(e) {
 function onItemDragStart(e) {
   const itemId = parseInt(e.target.dataset.itemId);
   const rect = e.target.getBoundingClientRect();
-  const workspaceRect = workspace.getBoundingClientRect();
 
   dragOffset.x = e.clientX - rect.left;
   dragOffset.y = e.clientY - rect.top;
