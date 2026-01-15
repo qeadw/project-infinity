@@ -31,7 +31,7 @@ function createLayout() {
           <button class="menu-btn" id="menu-btn">
             📖 <span id="discovery-count">4</span>/${game.getTotalElements()}
           </button>
-          <div class="currency">💰 <span id="currency">4</span></div>
+          <div class="matter">⚛️ <span id="currency">4</span></div>
         </div>
       </header>
       <div class="main">
@@ -39,7 +39,7 @@ function createLayout() {
         <div class="workspace-container">
           <div class="workspace" id="workspace"></div>
           <div class="discard-zone" id="discard">
-            🗑️ Discard (refund)
+            ⚛️ Reclaim Matter
           </div>
         </div>
       </div>
