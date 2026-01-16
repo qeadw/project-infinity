@@ -3,6 +3,22 @@ import { BASE_ELEMENTS, ALL_ELEMENTS, COMBINED_ELEMENTS, getRecipeResult, getIng
 const STORAGE_KEY = 'project-infinity-save';
 const COOKIE_NAME = 'project_infinity';
 
+// Machine types
+export const MACHINE_TYPES = {
+  accumulator: {
+    id: 'accumulator',
+    name: 'Accumulator',
+    description: 'Produces elements automatically',
+    interval: 5000, // 5 seconds
+  },
+  mechanical_arm: {
+    id: 'mechanical_arm',
+    name: 'Mechanical Arm',
+    description: 'Moves items from left to right',
+    interval: 2000, // 2 seconds
+  },
+};
+
 // Cookie helpers
 function setCookie(name, value, days = 365) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -24,10 +40,147 @@ class Game {
     this.workspaceItems = []; // { id, elementId, x, y }
     this.nextItemId = 1;
     this.discoveries = new Set(['water', 'fire', 'earth', 'wind']); // discovered element IDs
+    this.machineConfigs = {}; // { itemId: { targetElement, enabled } }
+    this.machineTimers = {}; // { itemId: intervalId }
     this.onCurrencyChange = null;
     this.onWorkspaceChange = null;
     this.onDiscovery = null;
     this.load();
+    this.startMachines();
+  }
+
+  // Check if an element is a machine
+  isMachine(elementId) {
+    const element = COMBINED_ELEMENTS[elementId];
+    return element?.machine === true;
+  }
+
+  // Get machine config for an item
+  getMachineConfig(itemId) {
+    return this.machineConfigs[itemId] || { targetElement: null, enabled: false };
+  }
+
+  // Set machine config
+  setMachineConfig(itemId, config) {
+    this.machineConfigs[itemId] = { ...this.getMachineConfig(itemId), ...config };
+    this.save();
+    this.restartMachine(itemId);
+  }
+
+  // Start all machines
+  startMachines() {
+    this.workspaceItems.forEach(item => {
+      if (this.isMachine(item.elementId)) {
+        this.startMachine(item.id);
+      }
+    });
+  }
+
+  // Start a single machine
+  startMachine(itemId) {
+    const item = this.workspaceItems.find(i => i.id === itemId);
+    if (!item || !this.isMachine(item.elementId)) return;
+
+    // Clear existing timer
+    if (this.machineTimers[itemId]) {
+      clearInterval(this.machineTimers[itemId]);
+    }
+
+    const config = this.getMachineConfig(itemId);
+    if (!config.enabled) return;
+
+    const machineType = MACHINE_TYPES[item.elementId];
+    if (!machineType) return;
+
+    this.machineTimers[itemId] = setInterval(() => {
+      this.tickMachine(itemId);
+    }, machineType.interval);
+  }
+
+  // Restart a machine (after config change)
+  restartMachine(itemId) {
+    if (this.machineTimers[itemId]) {
+      clearInterval(this.machineTimers[itemId]);
+      delete this.machineTimers[itemId];
+    }
+    this.startMachine(itemId);
+  }
+
+  // Stop a machine
+  stopMachine(itemId) {
+    if (this.machineTimers[itemId]) {
+      clearInterval(this.machineTimers[itemId]);
+      delete this.machineTimers[itemId];
+    }
+  }
+
+  // Machine tick - perform action
+  tickMachine(itemId) {
+    const item = this.workspaceItems.find(i => i.id === itemId);
+    if (!item) {
+      this.stopMachine(itemId);
+      return;
+    }
+
+    const config = this.getMachineConfig(itemId);
+    if (!config.enabled) return;
+
+    if (item.elementId === 'accumulator') {
+      this.tickAccumulator(item, config);
+    } else if (item.elementId === 'mechanical_arm') {
+      this.tickMechanicalArm(item, config);
+    }
+  }
+
+  // Accumulator: produce element to the right
+  tickAccumulator(item, config) {
+    if (!config.targetElement) return;
+
+    const element = ALL_ELEMENTS[config.targetElement];
+    if (!element) return;
+
+    // Check if we can afford it
+    if (this.currency < element.cost) return;
+
+    // Deduct cost and spawn element
+    this.currency -= element.cost;
+    const newItem = {
+      id: this.nextItemId++,
+      elementId: config.targetElement,
+      x: item.x + 100,
+      y: item.y,
+    };
+    this.workspaceItems.push(newItem);
+
+    this.save();
+    this.onCurrencyChange?.(this.currency);
+    this.onWorkspaceChange?.(this.workspaceItems);
+  }
+
+  // Mechanical Arm: move items from left to right
+  tickMechanicalArm(item, config) {
+    // Find items to the left of the arm
+    const armX = item.x;
+    const armY = item.y;
+    const range = 80; // pixels
+
+    const itemsToMove = this.workspaceItems.filter(i => {
+      if (i.id === item.id) return false;
+      if (this.isMachine(i.elementId)) return false;
+      const dx = armX - i.x;
+      const dy = Math.abs(armY - i.y);
+      return dx > 0 && dx < range && dy < range;
+    });
+
+    if (itemsToMove.length > 0) {
+      // Move the closest item
+      const closest = itemsToMove.reduce((a, b) =>
+        Math.abs(a.x - armX) < Math.abs(b.x - armX) ? a : b
+      );
+      closest.x = armX + 100; // Move to right of arm
+      this.save();
+      this.onWorkspaceChange?.(this.workspaceItems);
+    }
   }
 
   // Save to localStorage and cookie
@@ -37,6 +190,7 @@ class Game {
       discoveries: Array.from(this.discoveries),
       workspaceItems: this.workspaceItems,
       nextItemId: this.nextItemId,
+      machineConfigs: this.machineConfigs,
     };
     const json = JSON.stringify(data);
     localStorage.setItem(STORAGE_KEY, json);
@@ -57,6 +211,7 @@ class Game {
         this.discoveries = new Set(data.discoveries ?? ['water', 'fire', 'earth', 'wind']);
         this.workspaceItems = data.workspaceItems ?? [];
         this.nextItemId = data.nextItemId ?? 1;
+        this.machineConfigs = data.machineConfigs ?? {};
       }
     } catch (e) {
       console.error('Failed to load save:', e);
@@ -65,10 +220,15 @@ class Game {
 
   // Reset progress
   reset() {
+    // Stop all machines
+    Object.keys(this.machineTimers).forEach(id => this.stopMachine(parseInt(id)));
+
     this.currency = 10;
     this.workspaceItems = [];
     this.nextItemId = 1;
     this.discoveries = new Set(['water', 'fire', 'earth', 'wind']);
+    this.machineConfigs = {};
+    this.machineTimers = {};
     localStorage.removeItem(STORAGE_KEY);
     deleteCookie(COOKIE_NAME);
     this.onCurrencyChange?.(this.currency);
@@ -145,6 +305,10 @@ class Game {
 
     const item = this.workspaceItems[index];
     const element = ALL_ELEMENTS[item.elementId];
+
+    // Stop machine if it's running
+    this.stopMachine(itemId);
+    delete this.machineConfigs[itemId];
 
     // Refund the cost (10% bonus for items costing 10+)
     let refund = element.cost;

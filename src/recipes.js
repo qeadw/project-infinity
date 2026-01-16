@@ -112,6 +112,68 @@ export const COMBINED_ELEMENTS = {
   coil: { id: 'coil', name: 'Coil', emoji: '🧲', recipe: ['wire', 'wire'] },
   cable: { id: 'cable', name: 'Cable', emoji: '🔌', recipe: ['wire', 'copper'] },
   filament: { id: 'filament', name: 'Filament', emoji: '💡', recipe: ['wire', 'heat'] },
+
+  // ===== Layer 9 - Basic Mechanisms =====
+  motor: { id: 'motor', name: 'Motor', emoji: '🔄', recipe: ['coil', 'gear'] },
+  piston: { id: 'piston', name: 'Piston', emoji: '🔲', recipe: ['tube', 'spring'] },
+  lever: { id: 'lever', name: 'Lever', emoji: '🎚️', recipe: ['rod', 'hinge'] },
+  pulley: { id: 'pulley', name: 'Pulley', emoji: '🎡', recipe: ['gear', 'bracket'] },
+  axle: { id: 'axle', name: 'Axle', emoji: '🛞', recipe: ['rod', 'bearing'] },
+
+  // ===== Layer 10 - Mechanical Systems =====
+  engine: { id: 'engine', name: 'Engine', emoji: '🏎️', recipe: ['motor', 'piston'] },
+  crankshaft: { id: 'crankshaft', name: 'Crankshaft', emoji: '🔀', recipe: ['axle', 'gear'] },
+  pump: { id: 'pump', name: 'Pump', emoji: '🚰', recipe: ['piston', 'pipe'] },
+  winch: { id: 'winch', name: 'Winch', emoji: '🏗️', recipe: ['pulley', 'chain'] },
+  drivetrain: { id: 'drivetrain', name: 'Drivetrain', emoji: '⚙️', recipe: ['axle', 'chain'] },
+
+  // ===== Layer 11 - Control Systems =====
+  switch: { id: 'switch', name: 'Switch', emoji: '🔘', recipe: ['lever', 'cable'] },
+  valve: { id: 'valve', name: 'Valve', emoji: '🚿', recipe: ['pipe', 'lever'] },
+  relay: { id: 'relay', name: 'Relay', emoji: '📡', recipe: ['coil', 'switch'] },
+  sensor: { id: 'sensor', name: 'Sensor', emoji: '📶', recipe: ['filament', 'glass'] },
+  gearbox: { id: 'gearbox', name: 'Gearbox', emoji: '📦', recipe: ['crankshaft', 'gear'] },
+
+  // ===== Layer 12 - Advanced Mechanisms =====
+  actuator: { id: 'actuator', name: 'Actuator', emoji: '🦾', recipe: ['motor', 'lever'] },
+  hydraulics: { id: 'hydraulics', name: 'Hydraulics', emoji: '💧', recipe: ['pump', 'tube'] },
+  circuit: { id: 'circuit', name: 'Circuit', emoji: '🔋', recipe: ['relay', 'wire'] },
+  pneumatics: { id: 'pneumatics', name: 'Pneumatics', emoji: '💨', recipe: ['pump', 'valve'] },
+  transmission: { id: 'transmission', name: 'Transmission', emoji: '🔧', recipe: ['gearbox', 'drivetrain'] },
+
+  // ===== Layer 13 - Complex Assemblies =====
+  servo: { id: 'servo', name: 'Servo', emoji: '🎯', recipe: ['actuator', 'circuit'] },
+  cylinder: { id: 'cylinder', name: 'Cylinder', emoji: '🛢️', recipe: ['hydraulics', 'piston'] },
+  controller: { id: 'controller', name: 'Controller', emoji: '🎮', recipe: ['circuit', 'sensor'] },
+  conveyor: { id: 'conveyor', name: 'Conveyor', emoji: '🛤️', recipe: ['motor', 'chain'] },
+  gripper: { id: 'gripper', name: 'Gripper', emoji: '🤏', recipe: ['hydraulics', 'clamp'] },
+
+  // ===== Layer 14 - Robotic Components =====
+  robot_joint: { id: 'robot_joint', name: 'Robot Joint', emoji: '🦿', recipe: ['servo', 'bearing'] },
+  arm_segment: { id: 'arm_segment', name: 'Arm Segment', emoji: '📏', recipe: ['robot_joint', 'rod'] },
+  logic_unit: { id: 'logic_unit', name: 'Logic Unit', emoji: '🧠', recipe: ['controller', 'circuit'] },
+  power_supply: { id: 'power_supply', name: 'Power Supply', emoji: '🔌', recipe: ['coil', 'circuit'] },
+  frame: { id: 'frame', name: 'Frame', emoji: '🖼️', recipe: ['bracket', 'steel'] },
+
+  // ===== Layer 15 - Mechanical Arm (MACHINE) =====
+  mechanical_arm: { id: 'mechanical_arm', name: 'Mechanical Arm', emoji: '🦾', recipe: ['arm_segment', 'gripper'], machine: true },
+
+  // ===== Layer 16 - Advanced Electronics =====
+  processor: { id: 'processor', name: 'Processor', emoji: '💻', recipe: ['logic_unit', 'filament'] },
+  transformer: { id: 'transformer', name: 'Transformer', emoji: '🔌', recipe: ['coil', 'coil'] },
+  capacitor: { id: 'capacitor', name: 'Capacitor', emoji: '🔋', recipe: ['foil', 'circuit'] },
+  resistor: { id: 'resistor', name: 'Resistor', emoji: '➖', recipe: ['wire', 'charcoal'] },
+  amplifier: { id: 'amplifier', name: 'Amplifier', emoji: '📢', recipe: ['transformer', 'circuit'] },
+
+  // ===== Layer 17 - Computing =====
+  computer: { id: 'computer', name: 'Computer', emoji: '🖥️', recipe: ['processor', 'circuit'] },
+  generator: { id: 'generator', name: 'Generator', emoji: '⚡', recipe: ['engine', 'coil'] },
+  memory: { id: 'memory', name: 'Memory', emoji: '💾', recipe: ['capacitor', 'logic_unit'] },
+  interface: { id: 'interface', name: 'Interface', emoji: '🖱️', recipe: ['sensor', 'controller'] },
+  power_core: { id: 'power_core', name: 'Power Core', emoji: '🔆', recipe: ['generator', 'capacitor'] },
+
+  // ===== Layer 18 - Elemental Accumulator (MACHINE) =====
+  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['computer', 'power_core'], machine: true },
 };
 
 // Calculate costs dynamically based on ingredients

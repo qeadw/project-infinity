@@ -1,4 +1,4 @@
-import { game } from './game.js';
+import { game, MACHINE_TYPES } from './game.js';
 
 let workspace = null;
 let sidebar = null;
@@ -6,12 +6,16 @@ let currencyDisplay = null;
 let discardZone = null;
 let discoveryCount = null;
 let menuOverlay = null;
+let machineMenuOverlay = null;
 
 // Mouse drag state
 let isDragging = false;
 let dragData = null; // { type: 'spawn'|'move', elementId?, itemId? }
 let dragGhost = null;
 let dragOffset = { x: 0, y: 0 };
+
+// Pinned recipe
+let pinnedRecipe = null;
 
 export function initUI() {
   createLayout();
@@ -30,6 +34,9 @@ export function initUI() {
   // Global mouse events for dragging
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
+
+  // Prevent context menu on workspace
+  workspace.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function createLayout() {
@@ -58,13 +65,22 @@ function createLayout() {
     <div class="menu-overlay hidden" id="menu-overlay">
       <div class="menu-panel">
         <div class="menu-header">
-          <h2>Discoveries</h2>
+          <h2>Research Book</h2>
           <button class="close-btn" id="close-menu">&times;</button>
         </div>
         <div class="menu-content" id="menu-content"></div>
         <div class="menu-footer">
           <button class="reset-btn" id="reset-btn">Reset Progress</button>
         </div>
+      </div>
+    </div>
+    <div class="menu-overlay hidden" id="machine-menu-overlay">
+      <div class="menu-panel machine-panel">
+        <div class="menu-header">
+          <h2 id="machine-menu-title">Machine</h2>
+          <button class="close-btn" id="close-machine-menu">&times;</button>
+        </div>
+        <div class="menu-content" id="machine-menu-content"></div>
       </div>
     </div>
     <div class="discovery-popup hidden" id="discovery-popup">
@@ -82,6 +98,7 @@ function createLayout() {
   discardZone = document.getElementById('discard');
   discoveryCount = document.getElementById('discovery-count');
   menuOverlay = document.getElementById('menu-overlay');
+  machineMenuOverlay = document.getElementById('machine-menu-overlay');
   dragGhost = document.getElementById('drag-ghost');
 
   // Menu events
@@ -97,11 +114,17 @@ function createLayout() {
       closeMenu();
     }
   });
+
+  // Machine menu events
+  document.getElementById('close-machine-menu').addEventListener('click', closeMachineMenu);
+  machineMenuOverlay.addEventListener('click', (e) => {
+    if (e.target === machineMenuOverlay) closeMachineMenu();
+  });
 }
 
 function renderSidebar() {
   const elements = game.getBaseElements();
-  sidebar.innerHTML = '<h2>Elements</h2>' + elements.map(el => `
+  let html = '<h2>Elements</h2>' + elements.map(el => `
     <div class="element-btn ${game.canAfford(el.id) ? '' : 'disabled'}"
          data-element="${el.id}">
       <span class="emoji">${el.emoji}</span>
@@ -110,10 +133,83 @@ function renderSidebar() {
     </div>
   `).join('');
 
+  // Add pinned recipe tree if any
+  if (pinnedRecipe) {
+    html += renderPinnedRecipe();
+  }
+
+  sidebar.innerHTML = html;
+
   // Add mouse events to sidebar elements
   sidebar.querySelectorAll('.element-btn').forEach(btn => {
     btn.addEventListener('mousedown', onSidebarMouseDown);
   });
+
+  // Add unpin button event
+  const unpinBtn = sidebar.querySelector('.unpin-btn');
+  if (unpinBtn) {
+    unpinBtn.addEventListener('click', () => {
+      pinnedRecipe = null;
+      renderSidebar();
+    });
+  }
+}
+
+function renderPinnedRecipe() {
+  const element = game.getElement(pinnedRecipe);
+  if (!element) return '';
+
+  const tree = buildRecipeTree(pinnedRecipe, 3); // 3 levels deep
+
+  return `
+    <div class="pinned-section">
+      <div class="pinned-header">
+        <h2>Recipe</h2>
+        <button class="unpin-btn">Unpin</button>
+      </div>
+      <div class="pinned-target">
+        <span class="emoji">${element.emoji}</span>
+        <span class="name">${element.name}</span>
+        <span class="cost-badge">${element.cost}</span>
+      </div>
+      <div class="recipe-tree">${tree}</div>
+    </div>
+  `;
+}
+
+function buildRecipeTree(elementId, depth, level = 0) {
+  if (depth <= 0) return '';
+
+  const ingredients = game.getIngredients(elementId);
+  if (!ingredients) return '';
+
+  const [ing1Id, ing2Id] = ingredients;
+  const ing1 = game.getElement(ing1Id);
+  const ing2 = game.getElement(ing2Id);
+
+  const indent = '  '.repeat(level);
+
+  let html = `
+    <div class="tree-node" style="margin-left: ${level * 12}px">
+      <span class="tree-item ${game.isDiscovered(ing1Id) ? '' : 'undiscovered'}">
+        ${ing1.emoji} ${ing1.name}
+      </span>
+      <span class="tree-plus">+</span>
+      <span class="tree-item ${game.isDiscovered(ing2Id) ? '' : 'undiscovered'}">
+        ${ing2.emoji} ${ing2.name}
+      </span>
+    </div>
+  `;
+
+  // Recursively add sub-trees
+  if (game.getIngredients(ing1Id)) {
+    html += buildRecipeTree(ing1Id, depth - 1, level + 1);
+  }
+  if (game.getIngredients(ing2Id)) {
+    html += buildRecipeTree(ing2Id, depth - 1, level + 1);
+  }
+
+  return html;
 }
 
 function renderWorkspace() {
@@ -123,17 +219,27 @@ function renderWorkspace() {
   // Render all items
   game.getWorkspaceItems().forEach(item => {
     const element = game.getElement(item.elementId);
+    const isMachine = game.isMachine(item.elementId);
+    const config = isMachine ? game.getMachineConfig(item.id) : null;
+
     const div = document.createElement('div');
-    div.className = 'workspace-item';
+    div.className = 'workspace-item' + (isMachine ? ' machine' : '') + (config?.enabled ? ' active' : '');
     div.dataset.itemId = item.id;
     div.style.left = `${item.x}px`;
     div.style.top = `${item.y}px`;
     div.innerHTML = `
       <span class="emoji">${element.emoji}</span>
       <span class="name">${element.name}</span>
+      ${isMachine ? '<span class="machine-indicator">⚙️</span>' : ''}
     `;
 
     div.addEventListener('mousedown', onItemMouseDown);
+    if (isMachine) {
+      div.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        openMachineMenu(item.id);
+      });
+    }
 
     workspace.appendChild(div);
   });
@@ -191,7 +297,6 @@ function renderMenuContent() {
 
   content.innerHTML = discoveries.map(el => {
     const ingredients = game.getIngredients(el.id);
-    const canAfford = game.canAfford(el.id);
     let recipeHtml = '';
 
     if (ingredients) {
@@ -209,17 +314,112 @@ function renderMenuContent() {
     }
 
     return `
-      <div class="discovery-entry"
-           data-element="${el.id}">
+      <div class="discovery-entry" data-element="${el.id}">
         <div class="discovery-header">
           <span class="emoji">${el.emoji}</span>
           <span class="name">${el.name}</span>
           <span class="cost-badge">${el.cost}</span>
+          ${ingredients ? `<button class="pin-btn" data-element="${el.id}">📌</button>` : ''}
         </div>
         ${recipeHtml}
       </div>
     `;
   }).join('');
+
+  // Add pin button events
+  content.querySelectorAll('.pin-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pinnedRecipe = btn.dataset.element;
+      renderSidebar();
+      closeMenu();
+    });
+  });
+}
+
+// Machine menu
+let currentMachineItemId = null;
+
+function openMachineMenu(itemId) {
+  currentMachineItemId = itemId;
+  const item = game.getWorkspaceItems().find(i => i.id === itemId);
+  if (!item) return;
+
+  const element = game.getElement(item.elementId);
+  const machineType = MACHINE_TYPES[item.elementId];
+  const config = game.getMachineConfig(itemId);
+
+  document.getElementById('machine-menu-title').textContent = element.name;
+
+  const content = document.getElementById('machine-menu-content');
+
+  if (item.elementId === 'accumulator') {
+    // Accumulator: select element to produce
+    const discoveries = game.getDiscoveries();
+    discoveries.sort((a, b) => a.cost - b.cost);
+
+    content.innerHTML = `
+      <div class="machine-config">
+        <label>
+          <input type="checkbox" id="machine-enabled" ${config.enabled ? 'checked' : ''}>
+          Enabled
+        </label>
+        <p class="machine-desc">${machineType.description}</p>
+        <p class="machine-interval">Produces every ${machineType.interval / 1000}s</p>
+        <h3>Select Element to Produce:</h3>
+        <div class="element-select">
+          ${discoveries.map(el => `
+            <div class="select-option ${config.targetElement === el.id ? 'selected' : ''}"
+                 data-element="${el.id}">
+              <span class="emoji">${el.emoji}</span>
+              <span class="name">${el.name}</span>
+              <span class="cost-badge">${el.cost}/ea</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Enable toggle
+    content.querySelector('#machine-enabled').addEventListener('change', (e) => {
+      game.setMachineConfig(itemId, { enabled: e.target.checked });
+      renderWorkspace();
+    });
+
+    // Element selection
+    content.querySelectorAll('.select-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        content.querySelectorAll('.select-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        game.setMachineConfig(itemId, { targetElement: opt.dataset.element });
+      });
+    });
+  } else if (item.elementId === 'mechanical_arm') {
+    // Mechanical arm: just enable/disable
+    content.innerHTML = `
+      <div class="machine-config">
+        <label>
+          <input type="checkbox" id="machine-enabled" ${config.enabled ? 'checked' : ''}>
+          Enabled
+        </label>
+        <p class="machine-desc">${machineType.description}</p>
+        <p class="machine-interval">Moves items every ${machineType.interval / 1000}s</p>
+        <p class="machine-info">Place items to the left of the arm. It will move them to the right.</p>
+      </div>
+    `;
+
+    content.querySelector('#machine-enabled').addEventListener('change', (e) => {
+      game.setMachineConfig(itemId, { enabled: e.target.checked });
+      renderWorkspace();
+    });
+  }
+
+  machineMenuOverlay.classList.remove('hidden');
+}
+
+function closeMachineMenu() {
+  machineMenuOverlay.classList.add('hidden');
+  currentMachineItemId = null;
 }
 
 // Create ghost element for dragging
@@ -250,7 +450,6 @@ function onSidebarMouseDown(e) {
   if (!game.canAfford(elementId)) return;
 
   const element = game.getElement(elementId);
-  const rect = btn.getBoundingClientRect();
 
   isDragging = true;
   dragData = { type: 'spawn', elementId };
@@ -262,6 +461,9 @@ function onSidebarMouseDown(e) {
 
 // Workspace item mouse down - start moving
 function onItemMouseDown(e) {
+  // Ignore right clicks
+  if (e.button === 2) return;
+
   const item = e.target.closest('.workspace-item');
   if (!item) return;
 

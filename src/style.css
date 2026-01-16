@@ -462,3 +462,215 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
 }
+
+/* Machine Styles */
+.workspace-item.machine {
+  border: 2px solid #e94560;
+  background: linear-gradient(135deg, #1a2a4e, #0f3460);
+}
+
+.workspace-item.machine.active {
+  box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+  animation: machine-pulse 2s infinite;
+}
+
+@keyframes machine-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); }
+  50% { box-shadow: 0 0 25px rgba(233, 69, 96, 0.8); }
+}
+
+.machine-indicator {
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
+
+/* Machine Menu */
+.machine-panel {
+  max-width: 400px;
+}
+
+.machine-config {
+  padding: 1rem;
+}
+
+.machine-config label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.machine-config input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+.machine-desc {
+  color: #888;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.machine-interval {
+  color: #e94560;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.machine-info {
+  background: #0f3460;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.machine-config h3 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.element-select {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #0f3460;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.select-option:hover {
+  background: #1a4a7a;
+}
+
+.select-option.selected {
+  background: #1a4a7a;
+  border: 2px solid #e94560;
+}
+
+.select-option .emoji {
+  font-size: 1rem;
+}
+
+.select-option .name {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.select-option .cost-badge {
+  font-size: 0.75rem;
+  background: #e94560;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+/* Pinned Recipe Section */
+.pinned-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #0f3460;
+}
+
+.pinned-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.pinned-header h2 {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+}
+
+.unpin-btn {
+  background: #3d1a1a;
+  border: 1px solid #e94560;
+  color: #e94560;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.unpin-btn:hover {
+  background: #e94560;
+  color: #fff;
+}
+
+.pinned-target {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #0f3460;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.pinned-target .emoji {
+  font-size: 1.25rem;
+}
+
+.pinned-target .name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.recipe-tree {
+  font-size: 0.8rem;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  flex-wrap: wrap;
+}
+
+.tree-item {
+  background: #1a1a2e;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.tree-item.undiscovered {
+  opacity: 0.5;
+  color: #e94560;
+}
+
+.tree-plus {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 0.75rem;
+}
+
+/* Pin Button */
+.pin-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.pin-btn:hover {
+  opacity: 1;
+}
