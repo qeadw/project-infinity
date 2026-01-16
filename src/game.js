@@ -1,6 +1,22 @@
 import { BASE_ELEMENTS, ALL_ELEMENTS, COMBINED_ELEMENTS, getRecipeResult, getIngredients } from './recipes.js';
 
 const STORAGE_KEY = 'project-infinity-save';
+const COOKIE_NAME = 'project_infinity';
+
+// Cookie helpers
+function setCookie(name, value, days = 365) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+function deleteCookie(name) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
 
 class Game {
   constructor() {
@@ -14,20 +30,27 @@ class Game {
     this.load();
   }
 
-  // Save to localStorage
+  // Save to localStorage and cookie
   save() {
     const data = {
       currency: this.currency,
       discoveries: Array.from(this.discoveries),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const json = JSON.stringify(data);
+    localStorage.setItem(STORAGE_KEY, json);
+    setCookie(COOKIE_NAME, json);
   }
 
-  // Load from localStorage
+  // Load from localStorage or cookie
   load() {
     try {
-      const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (data) {
+      // Try localStorage first, fall back to cookie
+      let json = localStorage.getItem(STORAGE_KEY);
+      if (!json) {
+        json = getCookie(COOKIE_NAME);
+      }
+      if (json) {
+        const data = JSON.parse(json);
         this.currency = data.currency ?? 4;
         this.discoveries = new Set(data.discoveries ?? ['water', 'fire', 'earth', 'wind']);
       }
@@ -43,6 +66,7 @@ class Game {
     this.nextItemId = 1;
     this.discoveries = new Set(['water', 'fire', 'earth', 'wind']);
     localStorage.removeItem(STORAGE_KEY);
+    deleteCookie(COOKIE_NAME);
     this.onCurrencyChange?.(this.currency);
     this.onWorkspaceChange?.(this.workspaceItems);
   }

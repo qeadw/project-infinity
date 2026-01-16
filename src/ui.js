@@ -242,9 +242,12 @@ function onSidebarClick(e) {
   if (!btn || btn.classList.contains('disabled')) return;
 
   const elementId = btn.dataset.element;
-  const rect = workspace.getBoundingClientRect();
-  const x = Math.random() * (rect.width - 100) + 20;
-  const y = Math.random() * (rect.height - 100) + 20;
+  const btnRect = btn.getBoundingClientRect();
+  const workspaceRect = workspace.getBoundingClientRect();
+
+  // Spawn just to the right of the button
+  const x = 20; // Just past the sidebar edge
+  const y = btnRect.top - workspaceRect.top;
 
   game.spawnElement(elementId, x, y);
 }
