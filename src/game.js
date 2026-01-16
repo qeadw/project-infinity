@@ -146,8 +146,12 @@ class Game {
     const item = this.workspaceItems[index];
     const element = ALL_ELEMENTS[item.elementId];
 
-    // Refund the cost
-    this.currency += element.cost;
+    // Refund the cost (10% bonus for items costing 10+)
+    let refund = element.cost;
+    if (element.cost >= 10) {
+      refund = Math.floor(element.cost * 1.1);
+    }
+    this.currency += refund;
 
     // Remove from workspace
     this.workspaceItems.splice(index, 1);
