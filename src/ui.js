@@ -450,13 +450,14 @@ function openMachineMenu(itemId) {
     });
   } else if (item.elementId === 'research_bench') {
     // Research bench: spend matter to unlock random element
-    const canAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+    const totalMatter = game.getTotalMatter();
+    const canAfford = game.getCurrency() >= machineType.cost && totalMatter - machineType.cost >= machineType.minMatter;
 
     content.innerHTML = `
       <div class="machine-config">
         <p class="machine-desc">${machineType.description}</p>
-        <p class="machine-info">Cost: ${machineType.cost} matter (minimum ${machineType.minMatter} must remain)</p>
-        <p class="machine-info">Current matter: ${game.getCurrency()}</p>
+        <p class="machine-info">Cost: ${machineType.cost} matter (minimum ${machineType.minMatter} total must remain)</p>
+        <p class="machine-info">Current: ${game.getCurrency()} | Total (with board): ${totalMatter}</p>
         <button class="research-btn ${canAfford ? '' : 'disabled'}" id="do-research">
           Research (${machineType.cost} matter)
         </button>
@@ -480,13 +481,14 @@ function openMachineMenu(itemId) {
           </div>
         `;
         // Update button state
-        const newCanAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+        const newTotal = game.getTotalMatter();
+        const newCanAfford = game.getCurrency() >= machineType.cost && newTotal - machineType.cost >= machineType.minMatter;
         if (!newCanAfford) {
           researchBtn.classList.add('disabled');
         }
         // Update matter display in menu
         content.querySelector('.machine-info:nth-child(3)').textContent =
-          `Current matter: ${game.getCurrency()}`;
+          `Current: ${game.getCurrency()} | Total (with board): ${newTotal}`;
       } else if (result.reason === 'not_enough_matter') {
         resultDiv.innerHTML = `<div class="research-fail">Not enough matter! Need ${machineType.minMatter + machineType.cost} total.</div>`;
       } else if (result.reason === 'all_discovered') {
@@ -495,15 +497,16 @@ function openMachineMenu(itemId) {
     });
   } else if (item.elementId === 'advanced_research_bench') {
     // Advanced research bench: select an ingredient to research with
-    const canAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+    const totalMatter = game.getTotalMatter();
+    const canAfford = game.getCurrency() >= machineType.cost && totalMatter - machineType.cost >= machineType.minMatter;
     const discoveries = game.getDiscoveries();
     discoveries.sort((a, b) => a.cost - b.cost);
 
     content.innerHTML = `
       <div class="machine-config">
         <p class="machine-desc">${machineType.description}</p>
-        <p class="machine-info">Cost: ${machineType.cost} matter (minimum ${machineType.minMatter} must remain)</p>
-        <p class="machine-info current-matter">Current matter: ${game.getCurrency()}</p>
+        <p class="machine-info">Cost: ${machineType.cost} matter (minimum ${machineType.minMatter} total must remain)</p>
+        <p class="machine-info current-matter">Current: ${game.getCurrency()} | Total (with board): ${totalMatter}</p>
         <h3>Select ingredient to research:</h3>
         <div class="element-select">
           ${discoveries.map(el => `
@@ -550,13 +553,14 @@ function openMachineMenu(itemId) {
           </div>
         `;
         // Update button state
-        const newCanAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+        const newTotal = game.getTotalMatter();
+        const newCanAfford = game.getCurrency() >= machineType.cost && newTotal - machineType.cost >= machineType.minMatter;
         if (!newCanAfford) {
           researchBtn.classList.add('disabled');
         }
         // Update matter display
         content.querySelector('.current-matter').textContent =
-          `Current matter: ${game.getCurrency()}`;
+          `Current: ${game.getCurrency()} | Total (with board): ${newTotal}`;
       } else if (result.reason === 'not_enough_matter') {
         resultDiv.innerHTML = `<div class="research-fail">Not enough matter! Need ${machineType.minMatter + machineType.cost} total.</div>`;
       } else if (result.reason === 'none_available') {

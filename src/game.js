@@ -197,13 +197,27 @@ class Game {
     }
   }
 
+  // Calculate total matter (currency + value of workspace items)
+  getTotalMatter() {
+    const workspaceValue = this.workspaceItems.reduce((sum, item) => {
+      const element = ALL_ELEMENTS[item.elementId];
+      return sum + (element?.cost || 0);
+    }, 0);
+    return this.currency + workspaceValue;
+  }
+
   // Research Bench: spend matter to unlock random tier 10+ element
   doResearch() {
     const cost = MACHINE_TYPES.research_bench.cost;
     const minMatter = MACHINE_TYPES.research_bench.minMatter;
 
-    // Check if we have enough matter (can't go below minimum)
-    if (this.currency - cost < minMatter) {
+    // Check if we have enough matter (total including workspace can't go below minimum)
+    if (this.getTotalMatter() - cost < minMatter) {
+      return { success: false, reason: 'not_enough_matter' };
+    }
+
+    // Also need enough currency to actually pay
+    if (this.currency < cost) {
       return { success: false, reason: 'not_enough_matter' };
     }
 
@@ -235,8 +249,13 @@ class Game {
     const cost = MACHINE_TYPES.advanced_research_bench.cost;
     const minMatter = MACHINE_TYPES.advanced_research_bench.minMatter;
 
-    // Check if we have enough matter
-    if (this.currency - cost < minMatter) {
+    // Check if we have enough matter (total including workspace can't go below minimum)
+    if (this.getTotalMatter() - cost < minMatter) {
+      return { success: false, reason: 'not_enough_matter' };
+    }
+
+    // Also need enough currency to actually pay
+    if (this.currency < cost) {
       return { success: false, reason: 'not_enough_matter' };
     }
 
