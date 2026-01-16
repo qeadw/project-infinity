@@ -363,6 +363,16 @@ body {
   border-radius: 4px;
 }
 
+.layer-badge {
+  font-size: 0.75rem;
+  background: #0f3460;
+  border: 1px solid #1a4a7a;
+  color: #4ade80;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
 .recipe {
   display: flex;
   align-items: center;

@@ -176,8 +176,11 @@ export const COMBINED_ELEMENTS = {
   interface: { id: 'interface', name: 'Interface', emoji: '🖱️', recipe: ['sensor', 'controller'] },
   power_core: { id: 'power_core', name: 'Power Core', emoji: '🔆', recipe: ['generator', 'capacitor'] },
 
-  // ===== Elemental Accumulator (MACHINE) - plasma furnace =====
-  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['plasma', 'furnace'], machine: true },
+  // ===== Layer 17 - Advanced Computing =====
+  quantum_core: { id: 'quantum_core', name: 'Quantum Core', emoji: '💠', recipe: ['computer', 'plasma'], cost: 35 },
+
+  // ===== Layer 18 - Elemental Accumulator (MACHINE) =====
+  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['quantum_core', 'generator'], machine: true, cost: 45 },
 };
 
 // Calculate costs dynamically based on ingredients
@@ -221,3 +224,25 @@ export function getIngredients(elementId) {
   if (!element) return null;
   return element.recipe;
 }
+
+// Calculate layer (depth) of an element
+// Layer = max(ingredient layers) + 1
+// Base elements are layer 1
+export function calculateLayer(elementId) {
+  if (BASE_ELEMENTS[elementId]) {
+    return 1;
+  }
+  const element = COMBINED_ELEMENTS[elementId];
+  if (!element) return 0;
+  const [ing1, ing2] = element.recipe;
+  return Math.max(calculateLayer(ing1), calculateLayer(ing2)) + 1;
+}
+
+// Pre-calculate layers for all elements
+export const ELEMENT_LAYERS = {};
+Object.keys(BASE_ELEMENTS).forEach(id => {
+  ELEMENT_LAYERS[id] = 1;
+});
+Object.keys(COMBINED_ELEMENTS).forEach(id => {
+  ELEMENT_LAYERS[id] = calculateLayer(id);
+});

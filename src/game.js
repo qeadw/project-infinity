@@ -1,4 +1,4 @@
-import { BASE_ELEMENTS, ALL_ELEMENTS, COMBINED_ELEMENTS, getRecipeResult, getIngredients } from './recipes.js';
+import { BASE_ELEMENTS, ALL_ELEMENTS, COMBINED_ELEMENTS, getRecipeResult, getIngredients, ELEMENT_LAYERS } from './recipes.js';
 
 const STORAGE_KEY = 'project-infinity-save';
 const COOKIE_NAME = 'project_infinity';
@@ -485,6 +485,11 @@ class Game {
   // Get ingredients for element (one layer)
   getIngredients(elementId) {
     return getIngredients(elementId);
+  }
+
+  // Get layer (depth) of an element
+  getLayer(elementId) {
+    return ELEMENT_LAYERS[elementId] || 0;
   }
 }
 

@@ -331,9 +331,11 @@ function renderMenuContent() {
   const content = document.getElementById('menu-content');
   const discoveries = game.getDiscoveries();
 
-  // Sort by cost (tier), then alphabetically
+  // Sort by layer, then alphabetically
   discoveries.sort((a, b) => {
-    if (a.cost !== b.cost) return a.cost - b.cost;
+    const layerA = game.getLayer(a.id);
+    const layerB = game.getLayer(b.id);
+    if (layerA !== layerB) return layerA - layerB;
     return a.name.localeCompare(b.name);
   });
 
@@ -359,12 +361,13 @@ function renderMenuContent() {
       recipeHtml = '<div class="recipe base">Base Element</div>';
     }
 
+    const layer = game.getLayer(el.id);
     return `
       <div class="discovery-entry" data-element="${el.id}">
         <div class="discovery-header">
           <span class="emoji">${el.emoji}</span>
           <span class="name">${el.name}</span>
-          <span class="cost-badge">${el.cost}</span>
+          <span class="layer-badge">L${layer}</span>
           ${ingredients ? `<button class="pin-btn" data-element="${el.id}">📌</button>` : ''}
         </div>
         ${recipeHtml}
