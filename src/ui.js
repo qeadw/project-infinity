@@ -448,6 +448,51 @@ function openMachineMenu(itemId) {
       game.setMachineConfig(itemId, { enabled: e.target.checked });
       renderWorkspace();
     });
+  } else if (item.elementId === 'research_bench') {
+    // Research bench: spend matter to unlock random element
+    const canAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+
+    content.innerHTML = `
+      <div class="machine-config">
+        <p class="machine-desc">${machineType.description}</p>
+        <p class="machine-info">Cost: ${machineType.cost} matter (minimum ${machineType.minMatter} must remain)</p>
+        <p class="machine-info">Current matter: ${game.getCurrency()}</p>
+        <button class="research-btn ${canAfford ? '' : 'disabled'}" id="do-research">
+          Research (${machineType.cost} matter)
+        </button>
+        <div id="research-result"></div>
+      </div>
+    `;
+
+    const researchBtn = content.querySelector('#do-research');
+    researchBtn.addEventListener('click', () => {
+      if (researchBtn.classList.contains('disabled')) return;
+
+      const result = game.doResearch();
+      const resultDiv = content.querySelector('#research-result');
+
+      if (result.success) {
+        resultDiv.innerHTML = `
+          <div class="research-success">
+            <span class="discovery-label">Discovered!</span>
+            <span class="emoji">${result.element.emoji}</span>
+            <span class="name">${result.element.name}</span>
+          </div>
+        `;
+        // Update button state
+        const newCanAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+        if (!newCanAfford) {
+          researchBtn.classList.add('disabled');
+        }
+        // Update matter display in menu
+        content.querySelector('.machine-info:nth-child(3)').textContent =
+          `Current matter: ${game.getCurrency()}`;
+      } else if (result.reason === 'not_enough_matter') {
+        resultDiv.innerHTML = `<div class="research-fail">Not enough matter! Need ${machineType.minMatter + machineType.cost} total.</div>`;
+      } else if (result.reason === 'all_discovered') {
+        resultDiv.innerHTML = `<div class="research-fail">All tier 10+ elements already discovered!</div>`;
+      }
+    });
   }
 
   machineMenuOverlay.classList.remove('hidden');

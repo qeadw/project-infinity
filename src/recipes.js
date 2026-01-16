@@ -79,6 +79,9 @@ export const COMBINED_ELEMENTS = {
   tin: { id: 'tin', name: 'Tin', emoji: '⚪', recipe: ['ore', 'water'] },
   lead: { id: 'lead', name: 'Lead', emoji: '🔘', recipe: ['ore', 'pressure'] },
 
+  // ===== Layer 5.5 - Research =====
+  research_bench: { id: 'research_bench', name: 'Research Bench', emoji: '🔬', recipe: ['metal', 'metal'], machine: true },
+
   // ===== Layer 6 - Alloys =====
   steel: { id: 'steel', name: 'Steel', emoji: '🩶', recipe: ['iron', 'charcoal'] },
   bronze: { id: 'bronze', name: 'Bronze', emoji: '🟤', recipe: ['copper', 'tin'] },

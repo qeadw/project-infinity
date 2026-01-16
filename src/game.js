@@ -17,6 +17,13 @@ export const MACHINE_TYPES = {
     description: 'Moves items from left to right',
     interval: 2000, // 2 seconds
   },
+  research_bench: {
+    id: 'research_bench',
+    name: 'Research Bench',
+    description: 'Spend 3 matter to unlock a random tier 10+ element',
+    cost: 3,
+    minMatter: 10, // Can't go below this
+  },
 };
 
 // Cookie helpers
@@ -181,6 +188,39 @@ class Game {
       this.save();
       this.onWorkspaceChange?.(this.workspaceItems);
     }
+  }
+
+  // Research Bench: spend matter to unlock random tier 10+ element
+  doResearch() {
+    const cost = MACHINE_TYPES.research_bench.cost;
+    const minMatter = MACHINE_TYPES.research_bench.minMatter;
+
+    // Check if we have enough matter (can't go below minimum)
+    if (this.currency - cost < minMatter) {
+      return { success: false, reason: 'not_enough_matter' };
+    }
+
+    // Find undiscovered elements with cost >= 10
+    const undiscovered = Object.values(ALL_ELEMENTS).filter(el =>
+      el.cost >= 10 && !this.discoveries.has(el.id)
+    );
+
+    if (undiscovered.length === 0) {
+      return { success: false, reason: 'all_discovered' };
+    }
+
+    // Deduct cost
+    this.currency -= cost;
+
+    // Pick a random element
+    const randomElement = undiscovered[Math.floor(Math.random() * undiscovered.length)];
+    this.discoveries.add(randomElement.id);
+
+    this.save();
+    this.onCurrencyChange?.(this.currency);
+    this.onDiscovery?.(randomElement.id);
+
+    return { success: true, element: randomElement };
   }
 
   // Save to localStorage and cookie
