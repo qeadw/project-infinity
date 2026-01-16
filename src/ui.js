@@ -209,7 +209,7 @@ function renderMenuContent() {
     }
 
     return `
-      <div class="discovery-entry ${canAfford ? 'can-afford' : 'cannot-afford'}"
+      <div class="discovery-entry"
            data-element="${el.id}">
         <div class="discovery-header">
           <span class="emoji">${el.emoji}</span>
@@ -220,11 +220,6 @@ function renderMenuContent() {
       </div>
     `;
   }).join('');
-
-  // Add mouse events to discovery entries
-  content.querySelectorAll('.discovery-entry.can-afford').forEach(entry => {
-    entry.addEventListener('mousedown', onDiscoveryMouseDown);
-  });
 }
 
 // Create ghost element for dragging
@@ -263,28 +258,6 @@ function onSidebarMouseDown(e) {
 
   createGhost(element);
   updateGhostPosition(e.clientX, e.clientY);
-}
-
-// Discovery menu mouse down
-function onDiscoveryMouseDown(e) {
-  const entry = e.target.closest('.discovery-entry');
-  if (!entry || entry.classList.contains('cannot-afford')) return;
-
-  e.preventDefault();
-  const elementId = entry.dataset.element;
-  if (!game.canAfford(elementId)) return;
-
-  const element = game.getElement(elementId);
-
-  isDragging = true;
-  dragData = { type: 'spawn', elementId };
-  dragOffset = { x: 40, y: 20 };
-
-  createGhost(element);
-  updateGhostPosition(e.clientX, e.clientY);
-
-  // Close menu
-  closeMenu();
 }
 
 // Workspace item mouse down - start moving
