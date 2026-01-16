@@ -410,11 +410,8 @@ class Game {
     this.stopMachine(itemId);
     delete this.machineConfigs[itemId];
 
-    // Refund the cost (10% bonus for items costing 10+)
-    let refund = element.cost;
-    if (element.cost >= 10) {
-      refund = Math.floor(element.cost * 1.1);
-    }
+    // Refund the cost (add 1 for every 10 cost)
+    const refund = element.cost + Math.floor(element.cost / 10);
     this.currency += refund;
 
     // Remove from workspace
