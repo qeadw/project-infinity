@@ -80,10 +80,20 @@ body {
 /* Sidebar */
 .sidebar {
   width: 180px;
+  min-width: 150px;
+  max-width: 400px;
   background: #16213e;
   padding: 1rem;
   border-right: 1px solid #0f3460;
   overflow-y: auto;
+  resize: horizontal;
+  overflow: auto;
+}
+
+.sidebar::-webkit-resizer {
+  background: #0f3460;
+  border: 2px solid #1a4a7a;
+  border-radius: 4px;
 }
 
 .sidebar h2 {

@@ -160,7 +160,7 @@ export const COMBINED_ELEMENTS = {
   frame: { id: 'frame', name: 'Frame', emoji: '🖼️', recipe: ['bracket', 'steel'] },
 
   // ===== Layer 15 - Mechanical Arm (MACHINE) =====
-  mechanical_arm: { id: 'mechanical_arm', name: 'Mechanical Arm', emoji: '🦾', recipe: ['arm_segment', 'gripper'], machine: true },
+  mechanical_arm: { id: 'mechanical_arm', name: 'Mechanical Arm', emoji: '🦾', recipe: ['arm_segment', 'gripper'], machine: true, cost: 30 },
 
   // ===== Layer 16 - Advanced Electronics =====
   processor: { id: 'processor', name: 'Processor', emoji: '💻', recipe: ['logic_unit', 'filament'] },
@@ -177,7 +177,7 @@ export const COMBINED_ELEMENTS = {
   power_core: { id: 'power_core', name: 'Power Core', emoji: '🔆', recipe: ['generator', 'capacitor'] },
 
   // ===== Layer 18 - Elemental Accumulator (MACHINE) =====
-  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['computer', 'power_core'], machine: true },
+  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['computer', 'power_core'], machine: true, cost: 18 },
 };
 
 // Calculate costs dynamically based on ingredients
@@ -192,9 +192,11 @@ function calculateCost(elementId) {
   return calculateCost(ing1) + calculateCost(ing2);
 }
 
-// Add costs to combined elements
+// Add costs to combined elements (unless manually set)
 Object.keys(COMBINED_ELEMENTS).forEach(id => {
-  COMBINED_ELEMENTS[id].cost = calculateCost(id);
+  if (COMBINED_ELEMENTS[id].cost === undefined) {
+    COMBINED_ELEMENTS[id].cost = calculateCost(id);
+  }
 });
 
 // All elements lookup

@@ -202,23 +202,29 @@ function buildRecipeTree(elementId, depth, level = 0, path = '') {
   const [ing1Id, ing2Id] = ingredients;
   const ing1 = game.getElement(ing1Id);
   const ing2 = game.getElement(ing2Id);
+  const ing1Discovered = game.isDiscovered(ing1Id);
+  const ing2Discovered = game.isDiscovered(ing2Id);
   const hasIng1Recipe = game.getIngredients(ing1Id);
   const hasIng2Recipe = game.getIngredients(ing2Id);
 
+  // Show ??? for undiscovered elements
+  const ing1Display = ing1Discovered ? `${ing1.emoji} ${ing1.name}` : '???';
+  const ing2Display = ing2Discovered ? `${ing2.emoji} ${ing2.name}` : '???';
+
   let html = `
     <div class="tree-node" style="margin-left: ${level * 8}px">
-      <span class="tree-item ${game.isDiscovered(ing1Id) ? '' : 'undiscovered'} ${hasIng1Recipe ? 'has-recipe' : ''}">
-        ${ing1.emoji} ${ing1.name}
+      <span class="tree-item ${ing1Discovered ? '' : 'undiscovered'} ${hasIng1Recipe && ing1Discovered ? 'has-recipe' : ''}">
+        ${ing1Display}
       </span>
       <span class="tree-plus">+</span>
-      <span class="tree-item ${game.isDiscovered(ing2Id) ? '' : 'undiscovered'} ${hasIng2Recipe ? 'has-recipe' : ''}">
-        ${ing2.emoji} ${ing2.name}
+      <span class="tree-item ${ing2Discovered ? '' : 'undiscovered'} ${hasIng2Recipe && ing2Discovered ? 'has-recipe' : ''}">
+        ${ing2Display}
       </span>
     </div>
   `;
 
-  // Recursively add sub-trees with labels and collapse buttons
-  if (hasIng1Recipe) {
+  // Recursively add sub-trees with labels and collapse buttons (only if discovered)
+  if (hasIng1Recipe && ing1Discovered) {
     const nodePath1 = path + '/' + ing1Id;
     const isCollapsed1 = collapsedNodes.has(nodePath1);
     html += `<div class="tree-sub" style="margin-left: ${(level + 1) * 8}px">
@@ -231,7 +237,7 @@ function buildRecipeTree(elementId, depth, level = 0, path = '') {
       html += `</div>`;
     }
   }
-  if (hasIng2Recipe) {
+  if (hasIng2Recipe && ing2Discovered) {
     const nodePath2 = path + '/' + ing2Id;
     const isCollapsed2 = collapsedNodes.has(nodePath2);
     html += `<div class="tree-sub" style="margin-left: ${(level + 1) * 8}px">
