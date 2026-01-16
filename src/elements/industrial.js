@@ -97,7 +97,7 @@ export const INDUSTRIAL_ELEMENTS = {
   frame: { id: 'frame', name: 'Frame', emoji: '🖼️', recipe: ['bracket', 'steel'] },
 
   // ===== Layer 15 - Mechanical Arm (MACHINE) =====
-  mechanical_arm: { id: 'mechanical_arm', name: 'Mechanical Arm', emoji: '🦾', recipe: ['arm_segment', 'gripper'], machine: true, cost: 30 },
+  mechanical_arm: { id: 'mechanical_arm', name: 'Mechanical Arm', emoji: '🦾', recipe: ['arm_segment', 'gripper'], machine: true },
 
   // ===== Layer 16 - Advanced Electronics =====
   processor: { id: 'processor', name: 'Processor', emoji: '💻', recipe: ['logic_unit', 'filament'] },
@@ -114,8 +114,8 @@ export const INDUSTRIAL_ELEMENTS = {
   power_core: { id: 'power_core', name: 'Power Core', emoji: '🔆', recipe: ['generator', 'capacitor'] },
 
   // ===== Layer 17 - Advanced Computing =====
-  quantum_core: { id: 'quantum_core', name: 'Quantum Core', emoji: '💠', recipe: ['computer', 'plasma'], cost: 35 },
+  quantum_core: { id: 'quantum_core', name: 'Quantum Core', emoji: '💠', recipe: ['computer', 'plasma'] },
 
   // ===== Layer 18 - Elemental Accumulator (MACHINE) =====
-  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['quantum_core', 'generator'], machine: true, cost: 45 },
+  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['quantum_core', 'generator'], machine: true },
 };
