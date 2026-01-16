@@ -113,9 +113,6 @@ export const INDUSTRIAL_ELEMENTS = {
   interface: { id: 'interface', name: 'Interface', emoji: '🖱️', recipe: ['sensor', 'controller'] },
   power_core: { id: 'power_core', name: 'Power Core', emoji: '🔆', recipe: ['generator', 'capacitor'] },
 
-  // ===== Layer 17 - Advanced Computing =====
-  quantum_core: { id: 'quantum_core', name: 'Quantum Core', emoji: '💠', recipe: ['computer', 'plasma'] },
-
-  // ===== Layer 18 - Elemental Accumulator (MACHINE) =====
-  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['quantum_core', 'generator'], machine: true },
+  // ===== Layer 9 - Elemental Accumulator (MACHINE) =====
+  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['transformer', 'energy'], machine: true },
 };
