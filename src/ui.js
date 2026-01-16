@@ -368,6 +368,7 @@ function renderMenuContent() {
           <span class="emoji">${el.emoji}</span>
           <span class="name">${el.name}</span>
           <span class="layer-badge">L${layer}</span>
+          <span class="cost-badge">${el.cost}⚛️</span>
           ${ingredients ? `<button class="pin-btn" data-element="${el.id}">📌</button>` : ''}
         </div>
         ${recipeHtml}
