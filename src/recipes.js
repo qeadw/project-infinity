@@ -176,8 +176,8 @@ export const COMBINED_ELEMENTS = {
   interface: { id: 'interface', name: 'Interface', emoji: '🖱️', recipe: ['sensor', 'controller'] },
   power_core: { id: 'power_core', name: 'Power Core', emoji: '🔆', recipe: ['generator', 'capacitor'] },
 
-  // ===== Layer 18 - Elemental Accumulator (MACHINE) =====
-  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['computer', 'power_core'], machine: true, cost: 18 },
+  // ===== Elemental Accumulator (MACHINE) - plasma furnace =====
+  accumulator: { id: 'accumulator', name: 'Accumulator', emoji: '🏭', recipe: ['plasma', 'furnace'], machine: true },
 };
 
 // Calculate costs dynamically based on ingredients

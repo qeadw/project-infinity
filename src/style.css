@@ -382,6 +382,11 @@ body {
   border-radius: 4px;
 }
 
+.recipe-item.undiscovered {
+  color: #e94560;
+  font-style: italic;
+}
+
 .recipe-plus {
   color: #e94560;
   font-weight: bold;

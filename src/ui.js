@@ -344,11 +344,15 @@ function renderMenuContent() {
     if (ingredients) {
       const ing1 = game.getElement(ingredients[0]);
       const ing2 = game.getElement(ingredients[1]);
+      const ing1Discovered = game.isDiscovered(ingredients[0]);
+      const ing2Discovered = game.isDiscovered(ingredients[1]);
+      const ing1Display = ing1Discovered ? `${ing1.emoji} ${ing1.name}` : '???';
+      const ing2Display = ing2Discovered ? `${ing2.emoji} ${ing2.name}` : '???';
       recipeHtml = `
         <div class="recipe">
-          <span class="recipe-item">${ing1.emoji} ${ing1.name}</span>
+          <span class="recipe-item ${ing1Discovered ? '' : 'undiscovered'}">${ing1Display}</span>
           <span class="recipe-plus">+</span>
-          <span class="recipe-item">${ing2.emoji} ${ing2.name}</span>
+          <span class="recipe-item ${ing2Discovered ? '' : 'undiscovered'}">${ing2Display}</span>
         </div>
       `;
     } else {
