@@ -458,3 +458,31 @@ body {
     transform: translateX(-50%) translateY(0);
   }
 }
+
+/* Drag Ghost */
+.drag-ghost {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #16213e, #0f3460);
+  border: 2px solid #e94560;
+  border-radius: 8px;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+}
+
+.drag-ghost.hidden {
+  display: none;
+}
+
+.drag-ghost .emoji {
+  font-size: 1.25rem;
+}
+
+.drag-ghost .name {
+  font-size: 0.875rem;
+  font-weight: 500;
+}

@@ -6,7 +6,11 @@ let currencyDisplay = null;
 let discardZone = null;
 let discoveryCount = null;
 let menuOverlay = null;
-let draggedItem = null;
+
+// Mouse drag state
+let isDragging = false;
+let dragData = null; // { type: 'spawn'|'move', elementId?, itemId? }
+let dragGhost = null;
 let dragOffset = { x: 0, y: 0 };
 
 export function initUI() {
@@ -22,6 +26,10 @@ export function initUI() {
 
   // Render any saved workspace items
   renderWorkspace();
+
+  // Global mouse events for dragging
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
 }
 
 function createLayout() {
@@ -65,6 +73,7 @@ function createLayout() {
         <div class="discovery-element" id="discovery-element"></div>
       </div>
     </div>
+    <div class="drag-ghost hidden" id="drag-ghost"></div>
   `;
 
   workspace = document.getElementById('workspace');
@@ -73,20 +82,7 @@ function createLayout() {
   discardZone = document.getElementById('discard');
   discoveryCount = document.getElementById('discovery-count');
   menuOverlay = document.getElementById('menu-overlay');
-
-  // Workspace events
-  workspace.addEventListener('dragover', onWorkspaceDragOver);
-  workspace.addEventListener('drop', onWorkspaceDrop);
-
-  // Discard zone events
-  discardZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    discardZone.classList.add('drag-over');
-  });
-  discardZone.addEventListener('dragleave', () => {
-    discardZone.classList.remove('drag-over');
-  });
-  discardZone.addEventListener('drop', onDiscardDrop);
+  dragGhost = document.getElementById('drag-ghost');
 
   // Menu events
   document.getElementById('menu-btn').addEventListener('click', openMenu);
@@ -107,18 +103,16 @@ function renderSidebar() {
   const elements = game.getBaseElements();
   sidebar.innerHTML = '<h2>Elements</h2>' + elements.map(el => `
     <div class="element-btn ${game.canAfford(el.id) ? '' : 'disabled'}"
-         data-element="${el.id}"
-         draggable="${game.canAfford(el.id)}">
+         data-element="${el.id}">
       <span class="emoji">${el.emoji}</span>
       <span class="name">${el.name}</span>
       <span class="cost">${el.cost}</span>
     </div>
   `).join('');
 
-  // Add drag events to sidebar elements
+  // Add mouse events to sidebar elements
   sidebar.querySelectorAll('.element-btn').forEach(btn => {
-    btn.addEventListener('dragstart', onSidebarDragStart);
-    btn.addEventListener('click', onSidebarClick);
+    btn.addEventListener('mousedown', onSidebarMouseDown);
   });
 }
 
@@ -132,7 +126,6 @@ function renderWorkspace() {
     const div = document.createElement('div');
     div.className = 'workspace-item';
     div.dataset.itemId = item.id;
-    div.draggable = true;
     div.style.left = `${item.x}px`;
     div.style.top = `${item.y}px`;
     div.innerHTML = `
@@ -140,8 +133,7 @@ function renderWorkspace() {
       <span class="name">${element.name}</span>
     `;
 
-    div.addEventListener('dragstart', onItemDragStart);
-    div.addEventListener('dragend', onItemDragEnd);
+    div.addEventListener('mousedown', onItemMouseDown);
 
     workspace.appendChild(div);
   });
@@ -218,8 +210,7 @@ function renderMenuContent() {
 
     return `
       <div class="discovery-entry ${canAfford ? 'can-afford' : 'cannot-afford'}"
-           data-element="${el.id}"
-           draggable="${canAfford}">
+           data-element="${el.id}">
         <div class="discovery-header">
           <span class="emoji">${el.emoji}</span>
           <span class="name">${el.name}</span>
@@ -230,116 +221,165 @@ function renderMenuContent() {
     `;
   }).join('');
 
-  // Add drag events to discovery entries
+  // Add mouse events to discovery entries
   content.querySelectorAll('.discovery-entry.can-afford').forEach(entry => {
-    entry.addEventListener('dragstart', onDiscoveryDragStart);
+    entry.addEventListener('mousedown', onDiscoveryMouseDown);
   });
 }
 
-// Discovery menu drag start
-function onDiscoveryDragStart(e) {
-  const elementId = e.target.closest('.discovery-entry').dataset.element;
-  if (!game.canAfford(elementId)) {
-    e.preventDefault();
-    return;
-  }
-  e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'spawn', elementId }));
-  e.dataTransfer.effectAllowed = 'copy';
-  // Close menu after drag starts
-  setTimeout(() => closeMenu(), 100);
+// Create ghost element for dragging
+function createGhost(element) {
+  dragGhost.innerHTML = `
+    <span class="emoji">${element.emoji}</span>
+    <span class="name">${element.name}</span>
+  `;
+  dragGhost.classList.remove('hidden');
 }
 
-// Sidebar drag start - spawning new element
-function onSidebarDragStart(e) {
-  const btn = e.target.closest('.element-btn');
-  const elementId = btn?.dataset.element;
-  if (!elementId || !game.canAfford(elementId)) {
-    e.preventDefault();
-    return;
-  }
-  // Reset drag offset for sidebar spawns
-  dragOffset = { x: 0, y: 0 };
-  e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'spawn', elementId }));
-  e.dataTransfer.effectAllowed = 'copy';
+function hideGhost() {
+  dragGhost.classList.add('hidden');
 }
 
-// Sidebar click - spawn at random position
-function onSidebarClick(e) {
+function updateGhostPosition(clientX, clientY) {
+  dragGhost.style.left = `${clientX - dragOffset.x}px`;
+  dragGhost.style.top = `${clientY - dragOffset.y}px`;
+}
+
+// Sidebar mouse down - start spawning
+function onSidebarMouseDown(e) {
   const btn = e.target.closest('.element-btn');
   if (!btn || btn.classList.contains('disabled')) return;
 
+  e.preventDefault();
   const elementId = btn.dataset.element;
-  const btnRect = btn.getBoundingClientRect();
-  const workspaceRect = workspace.getBoundingClientRect();
+  if (!game.canAfford(elementId)) return;
 
-  // Spawn just to the right of the button
-  const x = 20; // Just past the sidebar edge
-  const y = btnRect.top - workspaceRect.top;
+  const element = game.getElement(elementId);
+  const rect = btn.getBoundingClientRect();
 
-  game.spawnElement(elementId, x, y);
+  isDragging = true;
+  dragData = { type: 'spawn', elementId };
+  dragOffset = { x: 40, y: 20 }; // Center of ghost
+
+  createGhost(element);
+  updateGhostPosition(e.clientX, e.clientY);
 }
 
-// Workspace item drag start
-function onItemDragStart(e) {
-  const itemId = parseInt(e.target.dataset.itemId);
-  const rect = e.target.getBoundingClientRect();
+// Discovery menu mouse down
+function onDiscoveryMouseDown(e) {
+  const entry = e.target.closest('.discovery-entry');
+  if (!entry || entry.classList.contains('cannot-afford')) return;
 
-  dragOffset.x = e.clientX - rect.left;
-  dragOffset.y = e.clientY - rect.top;
-  draggedItem = itemId;
-
-  e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'move', itemId }));
-  e.dataTransfer.effectAllowed = 'move';
-  e.target.classList.add('dragging');
-}
-
-function onItemDragEnd(e) {
-  e.target.classList.remove('dragging');
-  draggedItem = null;
-}
-
-// Workspace drag over
-function onWorkspaceDragOver(e) {
   e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
+  const elementId = entry.dataset.element;
+  if (!game.canAfford(elementId)) return;
+
+  const element = game.getElement(elementId);
+
+  isDragging = true;
+  dragData = { type: 'spawn', elementId };
+  dragOffset = { x: 40, y: 20 };
+
+  createGhost(element);
+  updateGhostPosition(e.clientX, e.clientY);
+
+  // Close menu
+  closeMenu();
 }
 
-// Workspace drop
-function onWorkspaceDrop(e) {
+// Workspace item mouse down - start moving
+function onItemMouseDown(e) {
+  const item = e.target.closest('.workspace-item');
+  if (!item) return;
+
   e.preventDefault();
+  const itemId = parseInt(item.dataset.itemId);
+  const rect = item.getBoundingClientRect();
+  const workspaceItem = game.getWorkspaceItems().find(i => i.id === itemId);
+  if (!workspaceItem) return;
+
+  const element = game.getElement(workspaceItem.elementId);
+
+  isDragging = true;
+  dragData = { type: 'move', itemId };
+  dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+  item.classList.add('dragging');
+  createGhost(element);
+  updateGhostPosition(e.clientX, e.clientY);
+}
+
+// Global mouse move
+function onMouseMove(e) {
+  if (!isDragging) return;
+
+  updateGhostPosition(e.clientX, e.clientY);
+
+  // Check if over discard zone
+  const discardRect = discardZone.getBoundingClientRect();
+  if (e.clientX >= discardRect.left && e.clientX <= discardRect.right &&
+      e.clientY >= discardRect.top && e.clientY <= discardRect.bottom) {
+    discardZone.classList.add('drag-over');
+  } else {
+    discardZone.classList.remove('drag-over');
+  }
+}
+
+// Global mouse up - handle drop
+function onMouseUp(e) {
+  if (!isDragging) return;
+
+  isDragging = false;
+  hideGhost();
   discardZone.classList.remove('drag-over');
 
-  const rect = workspace.getBoundingClientRect();
-  const x = e.clientX - rect.left - dragOffset.x;
-  const y = e.clientY - rect.top - dragOffset.y;
+  // Remove dragging class from any items
+  document.querySelectorAll('.workspace-item.dragging').forEach(el => {
+    el.classList.remove('dragging');
+  });
 
-  try {
-    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+  const workspaceRect = workspace.getBoundingClientRect();
+  const discardRect = discardZone.getBoundingClientRect();
 
-    if (data.type === 'spawn') {
-      // Spawning from sidebar
-      game.spawnElement(data.elementId, x, y);
-    } else if (data.type === 'move') {
-      // Moving existing item - check for combination
-      const dropTarget = findItemAtPosition(e.clientX, e.clientY, data.itemId);
+  // Check if dropped on discard zone
+  if (e.clientX >= discardRect.left && e.clientX <= discardRect.right &&
+      e.clientY >= discardRect.top && e.clientY <= discardRect.bottom) {
+    if (dragData.type === 'move' && dragData.itemId) {
+      game.discardItem(dragData.itemId);
+    }
+    dragData = null;
+    return;
+  }
+
+  // Check if dropped on workspace
+  if (e.clientX >= workspaceRect.left && e.clientX <= workspaceRect.right &&
+      e.clientY >= workspaceRect.top && e.clientY <= workspaceRect.bottom) {
+
+    const x = e.clientX - workspaceRect.left - dragOffset.x;
+    const y = e.clientY - workspaceRect.top - dragOffset.y;
+
+    if (dragData.type === 'spawn') {
+      game.spawnElement(dragData.elementId, x, y);
+    } else if (dragData.type === 'move') {
+      // Check for combination
+      const dropTarget = findItemAtPosition(e.clientX, e.clientY, dragData.itemId);
 
       if (dropTarget) {
-        // Try to combine
-        const result = game.combineItems(data.itemId, dropTarget);
+        const result = game.combineItems(dragData.itemId, dropTarget);
         if (!result) {
           // No recipe - just move
-          game.moveItem(data.itemId, x, y);
+          game.moveItem(dragData.itemId, x, y);
           renderWorkspace();
         }
       } else {
         // Just moving
-        game.moveItem(data.itemId, x, y);
+        game.moveItem(dragData.itemId, x, y);
         renderWorkspace();
       }
     }
-  } catch (err) {
-    console.error('Drop error:', err);
   }
+
+  dragData = null;
 }
 
 // Find item at position (excluding one item)
@@ -356,19 +396,4 @@ function findItemAtPosition(clientX, clientY, excludeId) {
     }
   }
   return null;
-}
-
-// Discard drop
-function onDiscardDrop(e) {
-  e.preventDefault();
-  discardZone.classList.remove('drag-over');
-
-  try {
-    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-    if (data.type === 'move' && data.itemId) {
-      game.discardItem(data.itemId);
-    }
-  } catch (err) {
-    console.error('Discard error:', err);
-  }
 }
