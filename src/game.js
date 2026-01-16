@@ -24,6 +24,13 @@ export const MACHINE_TYPES = {
     cost: 3,
     minMatter: 10, // Can't go below this
   },
+  advanced_research_bench: {
+    id: 'advanced_research_bench',
+    name: 'Advanced Research Bench',
+    description: 'Research elements that combine with a specific material',
+    cost: 3,
+    minMatter: 10,
+  },
 };
 
 // Cookie helpers
@@ -207,6 +214,40 @@ class Game {
 
     if (undiscovered.length === 0) {
       return { success: false, reason: 'all_discovered' };
+    }
+
+    // Deduct cost
+    this.currency -= cost;
+
+    // Pick a random element
+    const randomElement = undiscovered[Math.floor(Math.random() * undiscovered.length)];
+    this.discoveries.add(randomElement.id);
+
+    this.save();
+    this.onCurrencyChange?.(this.currency);
+    this.onDiscovery?.(randomElement.id);
+
+    return { success: true, element: randomElement };
+  }
+
+  // Advanced Research Bench: research elements containing a specific ingredient
+  doAdvancedResearch(ingredientId) {
+    const cost = MACHINE_TYPES.advanced_research_bench.cost;
+    const minMatter = MACHINE_TYPES.advanced_research_bench.minMatter;
+
+    // Check if we have enough matter
+    if (this.currency - cost < minMatter) {
+      return { success: false, reason: 'not_enough_matter' };
+    }
+
+    // Find undiscovered elements that use this ingredient
+    const undiscovered = Object.values(COMBINED_ELEMENTS).filter(el => {
+      if (this.discoveries.has(el.id)) return false;
+      return el.recipe && el.recipe.includes(ingredientId);
+    });
+
+    if (undiscovered.length === 0) {
+      return { success: false, reason: 'none_available', ingredient: ingredientId };
     }
 
     // Deduct cost

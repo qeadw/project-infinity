@@ -493,6 +493,77 @@ function openMachineMenu(itemId) {
         resultDiv.innerHTML = `<div class="research-fail">All tier 10+ elements already discovered!</div>`;
       }
     });
+  } else if (item.elementId === 'advanced_research_bench') {
+    // Advanced research bench: select an ingredient to research with
+    const canAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+    const discoveries = game.getDiscoveries();
+    discoveries.sort((a, b) => a.cost - b.cost);
+
+    content.innerHTML = `
+      <div class="machine-config">
+        <p class="machine-desc">${machineType.description}</p>
+        <p class="machine-info">Cost: ${machineType.cost} matter (minimum ${machineType.minMatter} must remain)</p>
+        <p class="machine-info current-matter">Current matter: ${game.getCurrency()}</p>
+        <h3>Select ingredient to research:</h3>
+        <div class="element-select">
+          ${discoveries.map(el => `
+            <div class="select-option" data-element="${el.id}">
+              <span class="emoji">${el.emoji}</span>
+              <span class="name">${el.name}</span>
+            </div>
+          `).join('')}
+        </div>
+        <button class="research-btn ${canAfford ? '' : 'disabled'}" id="do-advanced-research" disabled>
+          Select an ingredient first
+        </button>
+        <div id="research-result"></div>
+      </div>
+    `;
+
+    let selectedIngredient = null;
+    const researchBtn = content.querySelector('#do-advanced-research');
+
+    // Element selection
+    content.querySelectorAll('.select-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        content.querySelectorAll('.select-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedIngredient = opt.dataset.element;
+        const el = game.getElement(selectedIngredient);
+        researchBtn.textContent = `Research ${el.name} recipes (${machineType.cost} matter)`;
+        researchBtn.disabled = false;
+      });
+    });
+
+    researchBtn.addEventListener('click', () => {
+      if (researchBtn.classList.contains('disabled') || !selectedIngredient) return;
+
+      const result = game.doAdvancedResearch(selectedIngredient);
+      const resultDiv = content.querySelector('#research-result');
+
+      if (result.success) {
+        resultDiv.innerHTML = `
+          <div class="research-success">
+            <span class="discovery-label">Discovered!</span>
+            <span class="emoji">${result.element.emoji}</span>
+            <span class="name">${result.element.name}</span>
+          </div>
+        `;
+        // Update button state
+        const newCanAfford = game.getCurrency() - machineType.cost >= machineType.minMatter;
+        if (!newCanAfford) {
+          researchBtn.classList.add('disabled');
+        }
+        // Update matter display
+        content.querySelector('.current-matter').textContent =
+          `Current matter: ${game.getCurrency()}`;
+      } else if (result.reason === 'not_enough_matter') {
+        resultDiv.innerHTML = `<div class="research-fail">Not enough matter! Need ${machineType.minMatter + machineType.cost} total.</div>`;
+      } else if (result.reason === 'none_available') {
+        const ing = game.getElement(result.ingredient);
+        resultDiv.innerHTML = `<div class="research-fail">No undiscovered recipes use ${ing.emoji} ${ing.name}!</div>`;
+      }
+    });
   }
 
   machineMenuOverlay.classList.remove('hidden');

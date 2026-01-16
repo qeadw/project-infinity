@@ -81,6 +81,7 @@ export const COMBINED_ELEMENTS = {
 
   // ===== Layer 5.5 - Research =====
   research_bench: { id: 'research_bench', name: 'Research Bench', emoji: '🔬', recipe: ['metal', 'metal'], machine: true },
+  advanced_research_bench: { id: 'advanced_research_bench', name: 'Advanced Research Bench', emoji: '🧪', recipe: ['steel', 'research_bench'], machine: true },
 
   // ===== Layer 6 - Alloys =====
   steel: { id: 'steel', name: 'Steel', emoji: '🩶', recipe: ['iron', 'charcoal'] },
