@@ -18,6 +18,9 @@ let dragOffset = { x: 0, y: 0 };
 let pinnedRecipe = null;
 let collapsedNodes = new Set(); // Track collapsed tree nodes
 
+// Z-index for stacking dragged items on top
+let topZIndex = 1;
+
 export function initUI() {
   createLayout();
   renderSidebar();
@@ -283,6 +286,7 @@ function renderWorkspace() {
       div.dataset.itemId = item.id;
       div.style.left = `${item.x}px`;
       div.style.top = `${item.y}px`;
+      div.style.zIndex = ++topZIndex;
       div.innerHTML = `
         <span class="emoji">${element.emoji}</span>
         <span class="name">${element.name}</span>
@@ -755,14 +759,14 @@ function onMouseUp(e) {
       if (dropTarget) {
         const result = game.combineItems(dragData.itemId, dropTarget);
         if (!result) {
-          // No recipe - just move
+          // No recipe - just move, bring to top
           game.moveItem(dragData.itemId, x, y);
-          updateItemPosition(dragData.itemId, x, y);
+          updateItemPosition(dragData.itemId, x, y, true);
         }
       } else {
-        // Just moving
+        // Just moving, bring to top
         game.moveItem(dragData.itemId, x, y);
-        updateItemPosition(dragData.itemId, x, y);
+        updateItemPosition(dragData.itemId, x, y, true);
       }
     }
   }
@@ -770,12 +774,15 @@ function onMouseUp(e) {
   dragData = null;
 }
 
-// Update a single item's position in the DOM
-function updateItemPosition(itemId, x, y) {
+// Update a single item's position in the DOM and bring to top
+function updateItemPosition(itemId, x, y, bringToTop = false) {
   const div = workspace.querySelector(`.workspace-item[data-item-id="${itemId}"]`);
   if (div) {
     div.style.left = `${x}px`;
     div.style.top = `${y}px`;
+    if (bringToTop) {
+      div.style.zIndex = ++topZIndex;
+    }
   }
 }
 
