@@ -101,7 +101,13 @@ function createLayout() {
 }
 
 function renderSidebar() {
-  const elements = game.getBaseElements();
+  const elements = game.getDiscoveries();
+  // Sort by cost then name
+  elements.sort((a, b) => {
+    if (a.cost !== b.cost) return a.cost - b.cost;
+    return a.name.localeCompare(b.name);
+  });
+
   sidebar.innerHTML = '<h2>Elements</h2>' + elements.map(el => `
     <div class="element-btn ${game.canAfford(el.id) ? '' : 'disabled'}"
          data-element="${el.id}"

@@ -20,7 +20,7 @@ function deleteCookie(name) {
 
 class Game {
   constructor() {
-    this.currency = 4;
+    this.currency = 10;
     this.workspaceItems = []; // { id, elementId, x, y }
     this.nextItemId = 1;
     this.discoveries = new Set(['water', 'fire', 'earth', 'wind']); // discovered element IDs
@@ -51,7 +51,7 @@ class Game {
       }
       if (json) {
         const data = JSON.parse(json);
-        this.currency = data.currency ?? 4;
+        this.currency = data.currency ?? 10;
         this.discoveries = new Set(data.discoveries ?? ['water', 'fire', 'earth', 'wind']);
       }
     } catch (e) {
@@ -61,7 +61,7 @@ class Game {
 
   // Reset progress
   reset() {
-    this.currency = 4;
+    this.currency = 10;
     this.workspaceItems = [];
     this.nextItemId = 1;
     this.discoveries = new Set(['water', 'fire', 'earth', 'wind']);
