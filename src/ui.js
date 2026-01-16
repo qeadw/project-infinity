@@ -257,6 +257,8 @@ function onSidebarDragStart(e) {
     e.preventDefault();
     return;
   }
+  // Reset drag offset for sidebar spawns
+  dragOffset = { x: 0, y: 0 };
   e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'spawn', elementId }));
   e.dataTransfer.effectAllowed = 'copy';
 }
