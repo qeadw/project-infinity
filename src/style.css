@@ -660,6 +660,19 @@ body {
   font-size: 0.75rem;
 }
 
+.tree-sub {
+  margin-top: 0.25rem;
+}
+
+.tree-label {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.tree-item.has-recipe {
+  border: 1px dashed #555;
+}
+
 /* Pin Button */
 .pin-btn {
   background: none;

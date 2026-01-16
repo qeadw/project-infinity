@@ -159,7 +159,7 @@ function renderPinnedRecipe() {
   const element = game.getElement(pinnedRecipe);
   if (!element) return '';
 
-  const tree = buildRecipeTree(pinnedRecipe, 3); // 3 levels deep
+  const tree = buildRecipeTree(pinnedRecipe, 20); // Deep enough for any recipe
 
   return `
     <div class="pinned-section">
@@ -186,26 +186,32 @@ function buildRecipeTree(elementId, depth, level = 0) {
   const [ing1Id, ing2Id] = ingredients;
   const ing1 = game.getElement(ing1Id);
   const ing2 = game.getElement(ing2Id);
-
-  const indent = '  '.repeat(level);
+  const hasIng1Recipe = game.getIngredients(ing1Id);
+  const hasIng2Recipe = game.getIngredients(ing2Id);
 
   let html = `
-    <div class="tree-node" style="margin-left: ${level * 12}px">
-      <span class="tree-item ${game.isDiscovered(ing1Id) ? '' : 'undiscovered'}">
+    <div class="tree-node" style="margin-left: ${level * 8}px">
+      <span class="tree-item ${game.isDiscovered(ing1Id) ? '' : 'undiscovered'} ${hasIng1Recipe ? 'has-recipe' : ''}">
         ${ing1.emoji} ${ing1.name}
       </span>
       <span class="tree-plus">+</span>
-      <span class="tree-item ${game.isDiscovered(ing2Id) ? '' : 'undiscovered'}">
+      <span class="tree-item ${game.isDiscovered(ing2Id) ? '' : 'undiscovered'} ${hasIng2Recipe ? 'has-recipe' : ''}">
         ${ing2.emoji} ${ing2.name}
       </span>
     </div>
   `;
 
-  // Recursively add sub-trees
-  if (game.getIngredients(ing1Id)) {
+  // Recursively add sub-trees with labels
+  if (hasIng1Recipe) {
+    html += `<div class="tree-sub" style="margin-left: ${(level + 1) * 8}px">
+      <span class="tree-label">${ing1.emoji} ${ing1.name} =</span>
+    </div>`;
     html += buildRecipeTree(ing1Id, depth - 1, level + 1);
   }
-  if (game.getIngredients(ing2Id)) {
+  if (hasIng2Recipe) {
+    html += `<div class="tree-sub" style="margin-left: ${(level + 1) * 8}px">
+      <span class="tree-label">${ing2.emoji} ${ing2.name} =</span>
+    </div>`;
     html += buildRecipeTree(ing2Id, depth - 1, level + 1);
   }
 
@@ -534,7 +540,20 @@ function onMouseUp(e) {
     const y = e.clientY - workspaceRect.top - dragOffset.y;
 
     if (dragData.type === 'spawn') {
-      game.spawnElement(dragData.elementId, x, y);
+      // Check if dropping on an existing item to combine
+      const dropTarget = findItemAtPosition(e.clientX, e.clientY, null);
+      if (dropTarget) {
+        // Spawn the element first, then try to combine
+        const spawnedItem = game.spawnElement(dragData.elementId, x, y);
+        if (spawnedItem) {
+          const result = game.combineItems(spawnedItem.id, dropTarget);
+          if (!result) {
+            // No recipe - element already spawned, leave it there
+          }
+        }
+      } else {
+        game.spawnElement(dragData.elementId, x, y);
+      }
     } else if (dragData.type === 'move') {
       // Check for combination
       const dropTarget = findItemAtPosition(e.clientX, e.clientY, dragData.itemId);
