@@ -181,15 +181,15 @@ export const COMBINED_ELEMENTS = {
 };
 
 // Calculate costs dynamically based on ingredients
-function calculateCost(elementId, visited = new Set()) {
+function calculateCost(elementId) {
   if (BASE_ELEMENTS[elementId]) {
     return BASE_ELEMENTS[elementId].cost;
   }
   const element = COMBINED_ELEMENTS[elementId];
-  if (!element || visited.has(elementId)) return 0;
-  visited.add(elementId);
+  if (!element) return 0;
   const [ing1, ing2] = element.recipe;
-  return calculateCost(ing1, visited) + calculateCost(ing2, visited);
+  // Calculate each ingredient's cost independently (no shared visited set)
+  return calculateCost(ing1) + calculateCost(ing2);
 }
 
 // Add costs to combined elements

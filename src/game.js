@@ -28,7 +28,7 @@ export const MACHINE_TYPES = {
     id: 'advanced_research_bench',
     name: 'Advanced Research Bench',
     description: 'Research elements that combine with a specific material',
-    cost: 3,
+    cost: 5,
     minMatter: 10,
   },
 };
