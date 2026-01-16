@@ -16,6 +16,7 @@ let dragOffset = { x: 0, y: 0 };
 
 // Pinned recipe
 let pinnedRecipe = null;
+let collapsedNodes = new Set(); // Track collapsed tree nodes
 
 export function initUI() {
   createLayout();
@@ -150,9 +151,24 @@ function renderSidebar() {
   if (unpinBtn) {
     unpinBtn.addEventListener('click', () => {
       pinnedRecipe = null;
+      collapsedNodes.clear();
       renderSidebar();
     });
   }
+
+  // Add collapse button events
+  sidebar.querySelectorAll('.collapse-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const path = btn.dataset.path;
+      if (collapsedNodes.has(path)) {
+        collapsedNodes.delete(path);
+      } else {
+        collapsedNodes.add(path);
+      }
+      renderSidebar();
+    });
+  });
 }
 
 function renderPinnedRecipe() {
@@ -177,7 +193,7 @@ function renderPinnedRecipe() {
   `;
 }
 
-function buildRecipeTree(elementId, depth, level = 0) {
+function buildRecipeTree(elementId, depth, level = 0, path = '') {
   if (depth <= 0) return '';
 
   const ingredients = game.getIngredients(elementId);
@@ -201,18 +217,32 @@ function buildRecipeTree(elementId, depth, level = 0) {
     </div>
   `;
 
-  // Recursively add sub-trees with labels
+  // Recursively add sub-trees with labels and collapse buttons
   if (hasIng1Recipe) {
+    const nodePath1 = path + '/' + ing1Id;
+    const isCollapsed1 = collapsedNodes.has(nodePath1);
     html += `<div class="tree-sub" style="margin-left: ${(level + 1) * 8}px">
+      <button class="collapse-btn" data-path="${nodePath1}">${isCollapsed1 ? '+' : '-'}</button>
       <span class="tree-label">${ing1.emoji} ${ing1.name} =</span>
     </div>`;
-    html += buildRecipeTree(ing1Id, depth - 1, level + 1);
+    if (!isCollapsed1) {
+      html += `<div class="tree-children" data-path="${nodePath1}">`;
+      html += buildRecipeTree(ing1Id, depth - 1, level + 1, nodePath1);
+      html += `</div>`;
+    }
   }
   if (hasIng2Recipe) {
+    const nodePath2 = path + '/' + ing2Id;
+    const isCollapsed2 = collapsedNodes.has(nodePath2);
     html += `<div class="tree-sub" style="margin-left: ${(level + 1) * 8}px">
+      <button class="collapse-btn" data-path="${nodePath2}">${isCollapsed2 ? '+' : '-'}</button>
       <span class="tree-label">${ing2.emoji} ${ing2.name} =</span>
     </div>`;
-    html += buildRecipeTree(ing2Id, depth - 1, level + 1);
+    if (!isCollapsed2) {
+      html += `<div class="tree-children" data-path="${nodePath2}">`;
+      html += buildRecipeTree(ing2Id, depth - 1, level + 1, nodePath2);
+      html += `</div>`;
+    }
   }
 
   return html;
