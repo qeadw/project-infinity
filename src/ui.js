@@ -24,6 +24,18 @@ let topZIndex = 1;
 // Research book sort mode: 'layer' or 'value'
 let bookSortMode = 'layer';
 
+// Cursor position for quick-place
+let cursorX = 0;
+let cursorY = 0;
+
+// Quick-place key mappings
+const QUICK_PLACE_KEYS = {
+  '1': 'water',
+  '2': 'fire',
+  '3': 'earth',
+  '4': 'wind',
+};
+
 export function initUI() {
   createLayout();
   renderSidebar();
@@ -41,6 +53,9 @@ export function initUI() {
   // Global mouse events for dragging
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
+
+  // Keyboard events for quick-place
+  document.addEventListener('keydown', onKeyDown);
 
   // Prevent context menu on workspace
   workspace.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -719,6 +734,10 @@ function onItemMouseDown(e) {
 
 // Global mouse move
 function onMouseMove(e) {
+  // Always track cursor position for quick-place
+  cursorX = e.clientX;
+  cursorY = e.clientY;
+
   if (!isDragging) return;
 
   updateGhostPosition(e.clientX, e.clientY);
@@ -730,6 +749,40 @@ function onMouseMove(e) {
     discardZone.classList.add('drag-over');
   } else {
     discardZone.classList.remove('drag-over');
+  }
+}
+
+// Keyboard handler for quick-place (1=water, 2=fire, 3=earth, 4=wind)
+function onKeyDown(e) {
+  const elementId = QUICK_PLACE_KEYS[e.key];
+  if (!elementId) return;
+
+  // Check if cursor is over workspace
+  const workspaceRect = workspace.getBoundingClientRect();
+  if (cursorX < workspaceRect.left || cursorX > workspaceRect.right ||
+      cursorY < workspaceRect.top || cursorY > workspaceRect.bottom) {
+    return;
+  }
+
+  // Check if we can afford it
+  if (!game.canAfford(elementId)) return;
+
+  // Calculate position relative to workspace
+  const x = cursorX - workspaceRect.left - 40;
+  const y = cursorY - workspaceRect.top - 20;
+
+  // Check if cursor is over an existing item
+  const dropTarget = findItemAtPosition(cursorX, cursorY, null);
+
+  if (dropTarget) {
+    // Spawn and try to combine
+    const spawnedItem = game.spawnElement(elementId, x, y);
+    if (spawnedItem) {
+      game.combineItems(spawnedItem.id, dropTarget);
+    }
+  } else {
+    // Just spawn
+    game.spawnElement(elementId, x, y);
   }
 }
 
