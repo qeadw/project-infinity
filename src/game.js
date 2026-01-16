@@ -163,9 +163,9 @@ class Game {
     const resultId = getRecipeResult(item1.elementId, item2.elementId);
     if (!resultId) return null;
 
-    // Get position (midpoint of the two items)
-    const x = (item1.x + item2.x) / 2;
-    const y = (item1.y + item2.y) / 2;
+    // Place result at the target item's position (where user dropped)
+    const x = item2.x;
+    const y = item2.y;
 
     // Remove both items (no refund - they're consumed)
     this.workspaceItems = this.workspaceItems.filter(
