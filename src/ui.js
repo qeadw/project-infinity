@@ -101,13 +101,7 @@ function createLayout() {
 }
 
 function renderSidebar() {
-  const elements = game.getDiscoveries();
-  // Sort by cost then name
-  elements.sort((a, b) => {
-    if (a.cost !== b.cost) return a.cost - b.cost;
-    return a.name.localeCompare(b.name);
-  });
-
+  const elements = game.getBaseElements();
   sidebar.innerHTML = '<h2>Elements</h2>' + elements.map(el => `
     <div class="element-btn ${game.canAfford(el.id) ? '' : 'disabled'}"
          data-element="${el.id}"
@@ -202,6 +196,7 @@ function renderMenuContent() {
 
   content.innerHTML = discoveries.map(el => {
     const ingredients = game.getIngredients(el.id);
+    const canAfford = game.canAfford(el.id);
     let recipeHtml = '';
 
     if (ingredients) {
@@ -219,7 +214,9 @@ function renderMenuContent() {
     }
 
     return `
-      <div class="discovery-entry">
+      <div class="discovery-entry ${canAfford ? 'can-afford' : 'cannot-afford'}"
+           data-element="${el.id}"
+           draggable="${canAfford}">
         <div class="discovery-header">
           <span class="emoji">${el.emoji}</span>
           <span class="name">${el.name}</span>
@@ -229,6 +226,24 @@ function renderMenuContent() {
       </div>
     `;
   }).join('');
+
+  // Add drag events to discovery entries
+  content.querySelectorAll('.discovery-entry.can-afford').forEach(entry => {
+    entry.addEventListener('dragstart', onDiscoveryDragStart);
+  });
+}
+
+// Discovery menu drag start
+function onDiscoveryDragStart(e) {
+  const elementId = e.target.closest('.discovery-entry').dataset.element;
+  if (!game.canAfford(elementId)) {
+    e.preventDefault();
+    return;
+  }
+  e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'spawn', elementId }));
+  e.dataTransfer.effectAllowed = 'copy';
+  // Close menu after drag starts
+  setTimeout(() => closeMenu(), 100);
 }
 
 // Sidebar drag start - spawning new element
