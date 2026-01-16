@@ -255,44 +255,74 @@ function buildRecipeTree(elementId, depth, level = 0, path = '') {
 }
 
 function renderWorkspace() {
-  // Clear existing items
-  workspace.querySelectorAll('.workspace-item').forEach(el => el.remove());
+  const items = game.getWorkspaceItems();
+  const existingIds = new Set();
 
-  // Render all items
-  game.getWorkspaceItems().forEach(item => {
-    const element = game.getElement(item.elementId);
-    const isMachine = game.isMachine(item.elementId);
-    const config = isMachine ? game.getMachineConfig(item.id) : null;
+  // Update or create items
+  items.forEach(item => {
+    existingIds.add(item.id);
+    let div = workspace.querySelector(`.workspace-item[data-item-id="${item.id}"]`);
 
-    const div = document.createElement('div');
-    div.className = 'workspace-item' + (isMachine ? ' machine' : '') + (config?.enabled ? ' active' : '');
-    div.dataset.itemId = item.id;
-    div.style.left = `${item.x}px`;
-    div.style.top = `${item.y}px`;
-    div.innerHTML = `
-      <span class="emoji">${element.emoji}</span>
-      <span class="name">${element.name}</span>
-      ${isMachine ? '<span class="machine-indicator">⚙️</span>' : ''}
-    `;
+    if (div) {
+      // Update existing item position only
+      div.style.left = `${item.x}px`;
+      div.style.top = `${item.y}px`;
+      // Update active state for machines
+      if (game.isMachine(item.elementId)) {
+        const config = game.getMachineConfig(item.id);
+        div.classList.toggle('active', config?.enabled);
+      }
+    } else {
+      // Create new item
+      const element = game.getElement(item.elementId);
+      const isMachine = game.isMachine(item.elementId);
+      const config = isMachine ? game.getMachineConfig(item.id) : null;
 
-    div.addEventListener('mousedown', onItemMouseDown);
-    if (isMachine) {
-      div.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        openMachineMenu(item.id);
-      });
+      div = document.createElement('div');
+      div.className = 'workspace-item' + (isMachine ? ' machine' : '') + (config?.enabled ? ' active' : '');
+      div.dataset.itemId = item.id;
+      div.style.left = `${item.x}px`;
+      div.style.top = `${item.y}px`;
+      div.innerHTML = `
+        <span class="emoji">${element.emoji}</span>
+        <span class="name">${element.name}</span>
+        ${isMachine ? '<span class="machine-indicator">⚙️</span>' : ''}
+      `;
+
+      div.addEventListener('mousedown', onItemMouseDown);
+      if (isMachine) {
+        div.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          openMachineMenu(item.id);
+        });
+      }
+
+      workspace.appendChild(div);
     }
-
-    workspace.appendChild(div);
   });
 
-  // Update sidebar affordability
-  renderSidebar();
+  // Remove items that no longer exist
+  workspace.querySelectorAll('.workspace-item').forEach(el => {
+    const id = parseInt(el.dataset.itemId);
+    if (!existingIds.has(id)) {
+      el.remove();
+    }
+  });
+
+  // Update sidebar affordability only
+  updateSidebarAffordability();
 }
 
 function updateCurrencyDisplay() {
   currencyDisplay.textContent = game.getCurrency();
-  renderSidebar();
+  updateSidebarAffordability();
+}
+
+function updateSidebarAffordability() {
+  sidebar.querySelectorAll('.element-btn').forEach(btn => {
+    const elementId = btn.dataset.element;
+    btn.classList.toggle('disabled', !game.canAfford(elementId));
+  });
 }
 
 function updateDiscoveryCount() {
@@ -727,17 +757,26 @@ function onMouseUp(e) {
         if (!result) {
           // No recipe - just move
           game.moveItem(dragData.itemId, x, y);
-          renderWorkspace();
+          updateItemPosition(dragData.itemId, x, y);
         }
       } else {
         // Just moving
         game.moveItem(dragData.itemId, x, y);
-        renderWorkspace();
+        updateItemPosition(dragData.itemId, x, y);
       }
     }
   }
 
   dragData = null;
+}
+
+// Update a single item's position in the DOM
+function updateItemPosition(itemId, x, y) {
+  const div = workspace.querySelector(`.workspace-item[data-item-id="${itemId}"]`);
+  if (div) {
+    div.style.left = `${x}px`;
+    div.style.top = `${y}px`;
+  }
 }
 
 // Find item at position (excluding one item)
