@@ -21,6 +21,9 @@ let collapsedNodes = new Set(); // Track collapsed tree nodes
 // Z-index for stacking dragged items on top
 let topZIndex = 1;
 
+// Research book sort mode: 'layer' or 'value'
+let bookSortMode = 'layer';
+
 export function initUI() {
   createLayout();
   renderSidebar();
@@ -365,13 +368,29 @@ function renderMenuContent() {
   const content = document.getElementById('menu-content');
   const discoveries = game.getDiscoveries();
 
-  // Sort by layer, then alphabetically
-  discoveries.sort((a, b) => {
-    const layerA = game.getLayer(a.id);
-    const layerB = game.getLayer(b.id);
-    if (layerA !== layerB) return layerA - layerB;
-    return a.name.localeCompare(b.name);
-  });
+  // Sort based on selected mode
+  if (bookSortMode === 'layer') {
+    discoveries.sort((a, b) => {
+      const layerA = game.getLayer(a.id);
+      const layerB = game.getLayer(b.id);
+      if (layerA !== layerB) return layerA - layerB;
+      return a.name.localeCompare(b.name);
+    });
+  } else {
+    discoveries.sort((a, b) => {
+      if (a.cost !== b.cost) return a.cost - b.cost;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  // Sort controls
+  const sortControls = `
+    <div class="sort-controls">
+      <span>Sort by:</span>
+      <button class="sort-btn ${bookSortMode === 'layer' ? 'active' : ''}" data-sort="layer">Layer</button>
+      <button class="sort-btn ${bookSortMode === 'value' ? 'active' : ''}" data-sort="value">Value</button>
+    </div>
+  `;
 
   content.innerHTML = discoveries.map(el => {
     const ingredients = game.getIngredients(el.id);
@@ -409,6 +428,16 @@ function renderMenuContent() {
       </div>
     `;
   }).join('');
+
+  content.innerHTML = sortControls + content.innerHTML;
+
+  // Add sort button events
+  content.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bookSortMode = btn.dataset.sort;
+      renderMenuContent();
+    });
+  });
 
   // Add pin button events
   content.querySelectorAll('.pin-btn').forEach(btn => {
