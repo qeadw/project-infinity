@@ -20,9 +20,10 @@ export const MACHINE_TYPES = {
   research_bench: {
     id: 'research_bench',
     name: 'Research Bench',
-    description: 'Spend 3 matter to unlock a random tier 10+ element',
+    description: 'Spend 3 matter to unlock a random element (cost 3+)',
     cost: 3,
-    minMatter: 10, // Can't go below this
+    minTier: 3, // Minimum element cost to research
+    minMatter: 10, // Can't go below this total matter
   },
   advanced_research_bench: {
     id: 'advanced_research_bench',
@@ -206,10 +207,12 @@ class Game {
     return this.currency + workspaceValue;
   }
 
-  // Research Bench: spend matter to unlock random tier 10+ element
+  // Research Bench: spend matter to unlock random element
   doResearch() {
-    const cost = MACHINE_TYPES.research_bench.cost;
-    const minMatter = MACHINE_TYPES.research_bench.minMatter;
+    const config = MACHINE_TYPES.research_bench;
+    const cost = config.cost;
+    const minMatter = config.minMatter;
+    const minTier = config.minTier;
 
     // Check if we have enough matter (total including workspace can't go below minimum)
     if (this.getTotalMatter() - cost < minMatter) {
@@ -221,9 +224,9 @@ class Game {
       return { success: false, reason: 'not_enough_matter' };
     }
 
-    // Find undiscovered elements with cost >= 10
+    // Find undiscovered elements with cost >= minTier
     const undiscovered = Object.values(ALL_ELEMENTS).filter(el =>
-      el.cost >= 10 && !this.discoveries.has(el.id)
+      el.cost >= minTier && !this.discoveries.has(el.id)
     );
 
     if (undiscovered.length === 0) {

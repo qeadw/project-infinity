@@ -569,7 +569,7 @@ function openMachineMenu(itemId) {
       } else if (result.reason === 'not_enough_matter') {
         resultDiv.innerHTML = `<div class="research-fail">Not enough matter! Need ${machineType.minMatter + machineType.cost} total.</div>`;
       } else if (result.reason === 'all_discovered') {
-        resultDiv.innerHTML = `<div class="research-fail">All tier 10+ elements already discovered!</div>`;
+        resultDiv.innerHTML = `<div class="research-fail">All elements (cost ${machineType.minTier}+) already discovered!</div>`;
       }
     });
   } else if (item.elementId === 'advanced_research_bench') {
