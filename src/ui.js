@@ -19,6 +19,9 @@ export function initUI() {
   game.onCurrencyChange = updateCurrencyDisplay;
   game.onWorkspaceChange = renderWorkspace;
   game.onDiscovery = onNewDiscovery;
+
+  // Render any saved workspace items
+  renderWorkspace();
 }
 
 function createLayout() {
@@ -248,8 +251,9 @@ function onDiscoveryDragStart(e) {
 
 // Sidebar drag start - spawning new element
 function onSidebarDragStart(e) {
-  const elementId = e.target.dataset.element;
-  if (!game.canAfford(elementId)) {
+  const btn = e.target.closest('.element-btn');
+  const elementId = btn?.dataset.element;
+  if (!elementId || !game.canAfford(elementId)) {
     e.preventDefault();
     return;
   }

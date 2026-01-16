@@ -35,6 +35,8 @@ class Game {
     const data = {
       currency: this.currency,
       discoveries: Array.from(this.discoveries),
+      workspaceItems: this.workspaceItems,
+      nextItemId: this.nextItemId,
     };
     const json = JSON.stringify(data);
     localStorage.setItem(STORAGE_KEY, json);
@@ -53,6 +55,8 @@ class Game {
         const data = JSON.parse(json);
         this.currency = data.currency ?? 10;
         this.discoveries = new Set(data.discoveries ?? ['water', 'fire', 'earth', 'wind']);
+        this.workspaceItems = data.workspaceItems ?? [];
+        this.nextItemId = data.nextItemId ?? 1;
       }
     } catch (e) {
       console.error('Failed to load save:', e);
