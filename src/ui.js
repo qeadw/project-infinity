@@ -818,7 +818,7 @@ function createSaveModal() {
           <button class="btn" id="export-save-btn" style="background: #4a9; padding: 12px;">📥 Export Save</button>
           <label class="btn" style="background: #49a; padding: 12px; cursor: pointer; text-align: center;">
             📤 Import Save
-            <input type="file" id="import-save-input" accept=".json" style="display: none;">
+            <input type="file" id="import-save-input" accept=".sav" style="display: none;">
           </label>
         </div>
       </div>
@@ -849,11 +849,11 @@ function exportSave() {
     alert('No save data found!');
     return;
   }
-  const blob = new Blob([saveData], { type: 'application/json' });
+  const blob = new Blob([saveData], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `project-infinity-save-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `project-infinity-save-${new Date().toISOString().split('T')[0]}.sav`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -865,8 +865,13 @@ function importSave(e) {
   const reader = new FileReader();
   reader.onload = (event) => {
     try {
-      const data = JSON.parse(event.target.result);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      const saveData = event.target.result;
+      // Validate obfuscated format
+      if (!saveData.startsWith('PI1:')) {
+        alert('Invalid save file format!');
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, saveData);
       alert('Save imported successfully! Refreshing...');
       location.reload();
     } catch (err) {

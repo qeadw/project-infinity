@@ -2,6 +2,27 @@ import { BASE_ELEMENTS, ALL_ELEMENTS, COMBINED_ELEMENTS, getRecipeResult, getIng
 
 const STORAGE_KEY = 'project-infinity-save';
 const COOKIE_NAME = 'project_infinity';
+const SAVE_VERSION = 'PI1:';
+const OBF_KEY = 'ProjectInfinity2024';
+
+function obfuscateSave(data) {
+  let result = '';
+  for (let i = 0; i < data.length; i++) {
+    result += String.fromCharCode(data.charCodeAt(i) ^ OBF_KEY.charCodeAt(i % OBF_KEY.length));
+  }
+  return SAVE_VERSION + btoa(result);
+}
+
+function deobfuscateSave(data) {
+  if (!data.startsWith(SAVE_VERSION)) return data; // Legacy save
+  const encoded = data.slice(SAVE_VERSION.length);
+  const decoded = atob(encoded);
+  let result = '';
+  for (let i = 0; i < decoded.length; i++) {
+    result += String.fromCharCode(decoded.charCodeAt(i) ^ OBF_KEY.charCodeAt(i % OBF_KEY.length));
+  }
+  return result;
+}
 
 // Machine types
 export const MACHINE_TYPES = {
@@ -296,19 +317,21 @@ class Game {
       machineConfigs: this.machineConfigs,
     };
     const json = JSON.stringify(data);
-    localStorage.setItem(STORAGE_KEY, json);
-    setCookie(COOKIE_NAME, json);
+    const obfuscated = obfuscateSave(json);
+    localStorage.setItem(STORAGE_KEY, obfuscated);
+    setCookie(COOKIE_NAME, obfuscated);
   }
 
   // Load from localStorage or cookie
   load() {
     try {
       // Try localStorage first, fall back to cookie
-      let json = localStorage.getItem(STORAGE_KEY);
-      if (!json) {
-        json = getCookie(COOKIE_NAME);
+      let saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        saved = getCookie(COOKIE_NAME);
       }
-      if (json) {
+      if (saved) {
+        const json = deobfuscateSave(saved);
         const data = JSON.parse(json);
         this.currency = data.currency ?? 10;
         this.discoveries = new Set(data.discoveries ?? ['water', 'fire', 'earth', 'wind']);
