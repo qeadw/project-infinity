@@ -24,6 +24,10 @@ let topZIndex = 1;
 // Research book sort mode: 'layer' or 'value'
 let bookSortMode = 'layer';
 
+// Tutorial state
+let tutorialDismissed = false;
+const TUTORIAL_KEY = 'project-infinity-tutorial-dismissed';
+
 // Cursor position for quick-place
 let cursorX = 0;
 let cursorY = 0;
@@ -59,6 +63,10 @@ export function initUI() {
 
   // Prevent context menu on workspace
   workspace.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Load tutorial state and show if needed
+  tutorialDismissed = localStorage.getItem(TUTORIAL_KEY) === 'true';
+  updateTutorial();
 }
 
 function createLayout() {
@@ -111,6 +119,19 @@ function createLayout() {
         <div class="discovery-element" id="discovery-element"></div>
       </div>
     </div>
+    <div class="tutorial-panel hidden" id="tutorial-panel">
+      <div class="tutorial-content">
+        <div class="tutorial-header">
+          <span class="tutorial-icon">💡</span>
+          <span class="tutorial-title">Getting Started</span>
+          <button class="tutorial-close" id="tutorial-close">&times;</button>
+        </div>
+        <div class="tutorial-body">
+          <p class="tutorial-step" id="tutorial-step"></p>
+          <div class="tutorial-hint" id="tutorial-hint"></div>
+        </div>
+      </div>
+    </div>
     <div class="drag-ghost hidden" id="drag-ghost"></div>
   `;
 
@@ -134,6 +155,10 @@ function createLayout() {
       game.reset();
       updateDiscoveryCount();
       closeMenu();
+      // Reset tutorial state
+      tutorialDismissed = false;
+      localStorage.removeItem(TUTORIAL_KEY);
+      updateTutorial();
     }
   });
 
@@ -142,6 +167,9 @@ function createLayout() {
   machineMenuOverlay.addEventListener('click', (e) => {
     if (e.target === machineMenuOverlay) closeMachineMenu();
   });
+
+  // Tutorial close event
+  document.getElementById('tutorial-close').addEventListener('click', dismissTutorial);
 }
 
 function renderSidebar() {
@@ -368,6 +396,72 @@ function showDiscoveryPopup(elementId) {
 
   popup.classList.remove('hidden');
   setTimeout(() => popup.classList.add('hidden'), 2000);
+
+  // Update tutorial when new discoveries are made
+  updateTutorial();
+}
+
+// Tutorial system
+function updateTutorial() {
+  const panel = document.getElementById('tutorial-panel');
+  const stepEl = document.getElementById('tutorial-step');
+  const hintEl = document.getElementById('tutorial-hint');
+
+  // Don't show if dismissed
+  if (tutorialDismissed) {
+    panel.classList.add('hidden');
+    return;
+  }
+
+  // Check progress to determine which tutorial step to show
+  const hasResearchBench = game.isDiscovered('research_bench');
+  const hasMetal = game.isDiscovered('metal');
+  const hasOre = game.isDiscovered('ore');
+  const hasFurnace = game.isDiscovered('furnace');
+
+  // If they have the research bench, tutorial complete
+  if (hasResearchBench) {
+    panel.classList.add('hidden');
+    localStorage.setItem(TUTORIAL_KEY, 'true');
+    tutorialDismissed = true;
+    return;
+  }
+
+  // Show appropriate tutorial step
+  panel.classList.remove('hidden');
+
+  if (hasMetal) {
+    // Final step: make research bench
+    stepEl.innerHTML = `<strong>Almost there!</strong> Combine two 🔩 Metal to create your first Research Bench!`;
+    hintEl.innerHTML = `🔬 The Research Bench lets you unlock new elements to progress further.`;
+  } else if (hasOre && hasFurnace) {
+    // Have ore and furnace, need to make metal
+    stepEl.innerHTML = `<strong>Great!</strong> Now combine ⛏️ Ore + 🔥 Furnace to create Metal.`;
+    hintEl.innerHTML = `🔩 Metal is the key to unlocking machines and progression!`;
+  } else if (hasOre) {
+    // Have ore, need furnace
+    stepEl.innerHTML = `<strong>Good progress!</strong> You have Ore. Now make a Furnace (🧱 Brick + 🔥 Fire).`;
+    hintEl.innerHTML = `Hint: Brick = Mud + Fire, and Mud = Water + Earth`;
+  } else if (hasFurnace) {
+    // Have furnace, need ore
+    stepEl.innerHTML = `<strong>Good progress!</strong> You have a Furnace. Now make Ore (🪨 Stone + ⛰️ Mountain).`;
+    hintEl.innerHTML = `Hint: Stone = Water + Lava, Mountain = Earth + Earth`;
+  } else {
+    // Starting out
+    stepEl.innerHTML = `<strong>Welcome!</strong> Your goal: Create Metal, then combine two Metal to make a Research Bench.`;
+    hintEl.innerHTML = `
+      <div class="tutorial-path">
+        <span>Metal needs: ⛏️ Ore + 🔥 Furnace</span>
+        <span>Drag elements from the sidebar to the workspace, then drag them together to combine!</span>
+      </div>
+    `;
+  }
+}
+
+function dismissTutorial() {
+  tutorialDismissed = true;
+  localStorage.setItem(TUTORIAL_KEY, 'true');
+  document.getElementById('tutorial-panel').classList.add('hidden');
 }
 
 function openMenu() {
