@@ -752,8 +752,21 @@ function onMouseMove(e) {
   }
 }
 
-// Keyboard handler for quick-place (1=water, 2=fire, 3=earth, 4=wind)
+// Save buffer for detecting "save" typed
+let saveBuffer = '';
+
+// Keyboard handler for quick-place (1=water, 2=fire, 3=earth, 4=wind) and save code
 function onKeyDown(e) {
+  // Save code detection
+  if (e.key.length === 1) {
+    saveBuffer = (saveBuffer + e.key).slice(-4);
+    if (saveBuffer.toLowerCase() === 'save') {
+      showSaveModal();
+      saveBuffer = '';
+      return;
+    }
+  }
+
   const elementId = QUICK_PLACE_KEYS[e.key];
   if (!elementId) return;
 
@@ -784,6 +797,84 @@ function onKeyDown(e) {
     // Just spawn
     game.spawnElement(elementId, x, y);
   }
+}
+
+// Save modal functionality
+const STORAGE_KEY = 'project-infinity-save';
+
+function createSaveModal() {
+  const modal = document.createElement('div');
+  modal.id = 'save-modal';
+  modal.className = 'menu-overlay hidden';
+  modal.innerHTML = `
+    <div class="menu-panel" style="max-width: 400px;">
+      <div class="menu-header">
+        <h2>Save Management</h2>
+        <button class="close-btn" id="close-save-modal">&times;</button>
+      </div>
+      <div class="menu-content" style="padding: 20px;">
+        <p style="color: #aaa; margin-bottom: 20px;">Export your save to back it up, or import a previous save.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn" id="export-save-btn" style="background: #4a9; padding: 12px;">📥 Export Save</button>
+          <label class="btn" style="background: #49a; padding: 12px; cursor: pointer; text-align: center;">
+            📤 Import Save
+            <input type="file" id="import-save-input" accept=".json" style="display: none;">
+          </label>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('close-save-modal').onclick = hideSaveModal;
+  modal.onclick = (e) => { if (e.target === modal) hideSaveModal(); };
+  document.getElementById('export-save-btn').onclick = exportSave;
+  document.getElementById('import-save-input').onchange = importSave;
+}
+
+function showSaveModal() {
+  if (!document.getElementById('save-modal')) {
+    createSaveModal();
+  }
+  document.getElementById('save-modal').classList.remove('hidden');
+}
+
+function hideSaveModal() {
+  document.getElementById('save-modal').classList.add('hidden');
+}
+
+function exportSave() {
+  const saveData = localStorage.getItem(STORAGE_KEY);
+  if (!saveData) {
+    alert('No save data found!');
+    return;
+  }
+  const blob = new Blob([saveData], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `project-infinity-save-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importSave(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = JSON.parse(event.target.result);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      alert('Save imported successfully! Refreshing...');
+      location.reload();
+    } catch (err) {
+      alert('Invalid save file!');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
 }
 
 // Global mouse up - handle drop
