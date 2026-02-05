@@ -448,6 +448,31 @@ class Game {
     this.onWorkspaceChange?.(this.workspaceItems);
   }
 
+  // Sell all items in workspace (refund their costs)
+  sellAll() {
+    if (this.workspaceItems.length === 0) return;
+
+    let totalRefund = 0;
+
+    // Stop all machines and calculate refunds
+    this.workspaceItems.forEach(item => {
+      this.stopMachine(item.id);
+      delete this.machineConfigs[item.id];
+
+      const element = ALL_ELEMENTS[item.elementId];
+      if (element) {
+        totalRefund += element.cost + Math.floor(element.cost / 10);
+      }
+    });
+
+    this.currency += totalRefund;
+    this.workspaceItems = [];
+
+    this.save();
+    this.onCurrencyChange?.(this.currency);
+    this.onWorkspaceChange?.(this.workspaceItems);
+  }
+
   // Try to combine two items
   combineItems(itemId1, itemId2) {
     const item1 = this.workspaceItems.find(i => i.id === itemId1);

@@ -86,8 +86,11 @@ function createLayout() {
         <aside class="sidebar" id="sidebar"></aside>
         <div class="workspace-container">
           <div class="workspace" id="workspace"></div>
-          <div class="discard-zone" id="discard">
-            ⚛️ Reclaim Matter
+          <div class="workspace-actions">
+            <div class="discard-zone" id="discard">
+              ⚛️ Reclaim Matter
+            </div>
+            <button class="sell-all-btn" id="sell-all">⚛️ Sell All</button>
           </div>
         </div>
       </div>
@@ -166,6 +169,11 @@ function createLayout() {
   document.getElementById('close-machine-menu').addEventListener('click', closeMachineMenu);
   machineMenuOverlay.addEventListener('click', (e) => {
     if (e.target === machineMenuOverlay) closeMachineMenu();
+  });
+
+  // Sell All button
+  document.getElementById('sell-all').addEventListener('click', () => {
+    game.sellAll();
   });
 
   // Tutorial close event

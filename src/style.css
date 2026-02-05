@@ -209,8 +209,16 @@ body {
   font-weight: 500;
 }
 
+/* Workspace actions container */
+.workspace-actions {
+  display: flex;
+  gap: 0;
+  height: 60px;
+}
+
 /* Discard zone */
 .discard-zone {
+  flex: 1;
   height: 60px;
   display: flex;
   align-items: center;
@@ -226,6 +234,25 @@ body {
   background: #3d1a1a;
   border-color: #e94560;
   color: #e94560;
+}
+
+/* Sell All button */
+.sell-all-btn {
+  padding: 0 1.5rem;
+  background: #16213e;
+  border: none;
+  border-top: 2px solid #e94560;
+  border-left: 1px solid #0f3460;
+  color: #e94560;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sell-all-btn:hover {
+  background: #3d1a1a;
+  color: #fff;
 }
 
 /* Animations */
